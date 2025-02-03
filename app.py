@@ -1,13 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
-from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = "sysarch32"
 
-# MSSQL Database Connection String (Update with your credentials)
-app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://@LAPTOP-IEKCA1QT\SQLEXPRESS01/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=yes"
+# MSSQL Database Connection String
+app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://@LAPTOP-IEKCA1QT\\SQLEXPRESS01/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=yes"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -17,7 +16,7 @@ class User(db.Model):
     __tablename__ = "Users"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)  # Store hashed passwords
+    password = db.Column(db.String(255), nullable=False)  # Now stores plain text
     email = db.Column(db.String(100), unique=True, nullable=False)
     lastname = db.Column(db.String(50), nullable=False)
     firstname = db.Column(db.String(50), nullable=False)
@@ -39,7 +38,7 @@ def login():
     password = request.form.get("password")
 
     user = User.query.filter_by(username=username).first()
-    if user and check_password_hash(user.password, password):
+    if user and user.password == password:  # Direct comparison (no hashing)
         return redirect(url_for("success"))
     else:
         flash("Invalid username or password", "error")
@@ -50,7 +49,7 @@ def register():
     try:
         new_user = User(
             username=request.form.get("username"),
-            password = request.form.get("password"),
+            password=request.form.get("password"),  # Stores password as plain text
             email=request.form.get("email"),
             lastname=request.form.get("lastname"),
             firstname=request.form.get("firstname"),
