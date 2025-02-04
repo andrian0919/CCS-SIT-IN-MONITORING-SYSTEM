@@ -1,0 +1,7 @@
+<form action="{{ url_for('edit_record') }}" method="POST">
+    <input type="text" name="lastname" value="{{ user.lastname }}" required>
+    <input type="text" name="firstname" value="{{ user.firstname }}" required>
+    <input type="text" name="course" value="{{ user.course }}" required>
+    <input type="text" name="yearlevel" value="{{ user.yearlevel }}" required>
+    <button type="submit">Update</button>
+</form>

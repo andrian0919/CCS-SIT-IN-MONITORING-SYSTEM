@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make a Reservation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="reservation-container">
+        <h2>Make a Reservation</h2>
+        <form method="POST" action="/make_reservation">
+            <input type="date" name="date" required>
+            <input type="time" name="time" required>
+            <button type="submit">Reserve</button>
+        </form>
+        <div class="tabs">
+        <button onclick="window.location.href='/student_dashboard'" class="back-button">Back</button>
+        </div>
+    </div>
+</body>
+</html>

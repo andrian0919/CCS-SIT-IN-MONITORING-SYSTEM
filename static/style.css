@@ -88,3 +88,131 @@ select {
     font-weight: bold;
     font-size: 14px;
 }
+/* Student Dashboard Styles */
+.dashboard-container {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    width: 50%;
+    margin: auto;
+}
+
+.dashboard-container h2 {
+    text-align: center;
+}
+
+.dashboard-container ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.dashboard-container ul li {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f4f4f4;
+    border-radius: 5px;
+}
+
+.dashboard-container ul li a {
+    text-decoration: none;
+    color: blue;
+    font-weight: bold;
+}
+
+.dashboard-container ul li a:hover {
+    color: gray;
+}
+
+/* Make Reservation Styles */
+.reservation-container {
+    max-width: 500px;
+    padding: 25px;
+}
+
+.reservation-container form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.reservation-container label {
+    font-weight: bold;
+    margin: 10px 0 5px;
+}
+
+.reservation-container input, .reservation-container select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.reservation-container button {
+    padding: 10px 20px;
+    text-decoration: none;
+    background-color: rgb(9, 9, 243);
+    color: white;
+    border-radius: 5px;
+}
+
+.reservation-container button:hover {
+    background-color: gray;
+}
+
+.student-info {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.student-info p {
+    font-size: 18px;
+}
+
+.actions {
+    display: flex;
+    justify-content: space-around;
+}
+
+.button {
+    padding: 10px 20px;
+    text-decoration: none;
+    background-color: rgb(9, 9, 243);
+    color: white;
+    border-radius: 5px;
+}
+
+.button:hover {
+    background-color: gray; /* Gray hover effect */
+    color: white; /* White text on hover */
+}
+
+.button.logout {
+    background-color: red;
+}
+
+.back-button {
+    background-color: white !important; /* Force white background */
+    border: 2px solid gray; /* Gray border */
+    color: skyblue !important; /* Ensure text is gray */
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 16px;
+    display: block; /* Make it take up the full width */
+    width: 60%; /* Match Reserve button width */
+    margin: 10px auto 0; /* Center and add spacing */
+    text-align: center;
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition */
+}
+
+.back-button:hover {
+    background-color: gray !important; /* Gray background on hover */
+    color: white !important; /* White text on hover */
+}
+
+
+

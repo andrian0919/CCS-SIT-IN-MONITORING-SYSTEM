@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <p>Welcome, {{ user.firstname }} {{ user.lastname }}!</p>
+        <p>Your User ID: {{ user.id }}</p>
+        <p>Remaining Sessions: {{ remaining_sessions }}</p>
+        
+
+        {% if user %}
+        <div class="student-info">
+            <p><strong>ID:</strong> {{ user.student_id }}</p>
+            <p><strong>Last Name:</strong> {{ user.lastname }}</p>
+            <p><strong>First Name:</strong> {{ user.firstname }}</p>
+            <p><strong>Course:</strong> {{ user.course }}</p>
+            <p><strong>Year Level:</strong> {{ user.yearlevel }}</p>
+        </div>
+        {% endif %}
+
+        <div class="actions">
+            <a href="{{ url_for('edit_record') }}" class="button">Edit Record</a>
+            <a href="{{ url_for('make_reservation') }}" class="button">Reservation</a>
+            <a href="{{ url_for('logout') }}" class="button logout">Logout</a>
+        </div>
+    </div>
+</body>
+</html>
