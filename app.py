@@ -17,8 +17,7 @@ db = SQLAlchemy(app)
 class User(db.Model):
     __tablename__ = "Users"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    student_id = db.Column(db.String(50), unique=True, nullable=False)  # New field for student ID
-    username = db.Column(db.String(50), unique=True, nullable=False)
+    student_id = db.Column(db.String(50), unique=True, nullable=False)  # Ensure this matches DB changes
     password = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     lastname = db.Column(db.String(50), nullable=False)
@@ -55,33 +54,46 @@ def home():
 
 @app.route("/login", methods=["POST"])
 def login():
-    username = request.form.get("username")
+    student_id = request.form.get("username")  # The input field is still named "username" in the HTML
     password = request.form.get("password")
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(student_id=student_id).first()
     if user and user.password == password:  # Direct comparison (consider hashing for security)
         session["user_id"] = user.id
-        session["username"] = user.username 
+        session["student_id"] = user.student_id  # Store student_id in session
         return redirect(url_for("success"))
     else:
-        flash("Invalid username or password", "error")
+        flash("Invalid ID or password", "error")
         return redirect(url_for("home"))
 
 
 @app.route("/register", methods=["POST"])
 def register():
     try:
+        student_id = request.form.get("id")
+        password = request.form.get("password")
+        repeat_password = request.form.get("repeat_password")
+
+        if password != repeat_password:
+            flash("Passwords do not match!", "error")
+            return redirect(url_for("home"))
+
+        existing_user = User.query.filter_by(student_id=student_id).first()
+        if existing_user:
+            flash("Student ID already exists!", "error")
+            return redirect(url_for("home"))
+
         new_user = User(
-            student_id=request.form.get("id"),  # Save student ID here
-            username=request.form.get("username"),
-            password=request.form.get("password"),
+            student_id=student_id,
+            password=password,  # You should hash this for security
             email=request.form.get("email"),
             lastname=request.form.get("lastname"),
             firstname=request.form.get("firstname"),
             middlename=request.form.get("middlename"),
             course=request.form.get("course"),
-            yearlevel=request.form.get("yearlevel")
+            yearlevel=request.form.get("yearlevel"),
         )
+
         db.session.add(new_user)
         db.session.commit()
 
@@ -89,15 +101,12 @@ def register():
         db.session.add(session_record)
         db.session.commit()
 
-        session["user_id"] = new_user.id
-        session["username"] = new_user.username
+        flash("Registration successful! Please log in.", "success")
+        return redirect(url_for("home"))  # Redirect to login page
 
-        flash("Registration successful! You are now logged in.", "success")
-        return redirect(url_for("success"))
-
-    except IntegrityError:
+    except IntegrityError as e:
         db.session.rollback()
-        flash("Username, email, or student ID already exists", "error")
+        flash("Email or student ID already exists", "error")
         return redirect(url_for("home"))
 
 
