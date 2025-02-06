@@ -17,14 +17,16 @@ db = SQLAlchemy(app)
 class User(db.Model):
     __tablename__ = "Users"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    student_id = db.Column(db.String(50), unique=True, nullable=False)  # Ensure this matches DB changes
+    student_id = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     lastname = db.Column(db.String(50), nullable=False)
     firstname = db.Column(db.String(50), nullable=False)
     middlename = db.Column(db.String(50))
-    course = db.Column(db.String(50), nullable=False)
-    yearlevel = db.Column(db.String(20), nullable=False)
+    course = db.Column(db.String(50), nullable=True) 
+    yearlevel = db.Column(db.String(20), nullable=True) 
+    role = db.Column(db.String(20), nullable=False, default="student")
+
 
 
 # Define the Sessions model
@@ -48,23 +50,67 @@ class Reservation(db.Model):
 with app.app_context():
     db.create_all()
 
+    fixed_accounts = [
+        {"student_id": "admin", "password": "admin123", "email": "admin@example.com", "lastname": "Admin", "firstname": "User", "role": "admin"},
+        {"student_id": "staff", "password": "staff123", "email": "staff@example.com", "lastname": "Staff", "firstname": "User", "role": "staff"},
+    ]
+
+    for account in fixed_accounts:
+        existing_user = User.query.filter_by(student_id=account["student_id"]).first()
+        if not existing_user:
+            new_user = User(
+                student_id=account["student_id"],
+                password=account["password"],  # Hash this for security
+                email=account["email"],
+                lastname=account["lastname"],
+                firstname=account["firstname"],
+                role=account["role"],
+            )
+            db.session.add(new_user)
+
+    db.session.commit()
+
 @app.route("/")
 def home():
     return render_template("index.html")
 
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    student_id = request.form.get("username")  # The input field is still named "username" in the HTML
+    if request.method == "GET":
+        # Render the login page when accessed via GET request
+        return render_template("index.html")
+    
+    student_id = request.form.get("username")
     password = request.form.get("password")
 
     user = User.query.filter_by(student_id=student_id).first()
-    if user and user.password == password:  # Direct comparison (consider hashing for security)
+    if user and user.password == password:
         session["user_id"] = user.id
-        session["student_id"] = user.student_id  # Store student_id in session
-        return redirect(url_for("success"))
+        session["role"] = user.role  # Store role in session
+
+        if user.role == "admin":
+            return redirect(url_for("admin_dashboard"))
+        elif user.role == "staff":
+            return redirect(url_for("staff_dashboard"))
+        else:
+            return redirect(url_for("student_dashboard"))
     else:
         flash("Invalid ID or password", "error")
         return redirect(url_for("home"))
+
+@app.route("/admin_dashboard")
+def admin_dashboard():
+    if "user_id" not in session or session.get("role") != "admin":
+        flash("Access denied!", "error")
+        return redirect(url_for("home"))
+    return render_template("admin_dashboard.html")
+
+@app.route("/staff_dashboard")
+def staff_dashboard():
+    if "user_id" not in session or session.get("role") != "staff":
+        flash("Access denied!", "error")
+        return redirect(url_for("home"))
+    return render_template("staff_dashboard.html")
 
 
 @app.route("/register", methods=["POST"])

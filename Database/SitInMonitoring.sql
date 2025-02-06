@@ -11,7 +11,8 @@ CREATE TABLE Users (
     firstname VARCHAR(50) NOT NULL,
     middlename VARCHAR(50) NULL,
     course VARCHAR(50) NOT NULL,
-    yearlevel VARCHAR(20) NOT NULL
+    yearlevel VARCHAR(20) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'student'
 );
 
 CREATE TABLE Sessions (
@@ -28,5 +29,11 @@ CREATE TABLE Reservations (
     time VARCHAR(20) NOT NULL,
     FOREIGN KEY (student_id) REFERENCES Users(id) ON DELETE CASCADE
 );
+
+INSERT INTO Users (student_id, password, email, lastname, firstname, course, yearlevel, role)
+VALUES 
+    ('admin', 'admin123', 'admin@example.com', 'Admin', 'User', 'N/A', 'N/A', 'admin'),
+    ('staff', 'staff123', 'staff@example.com', 'Staff', 'User', 'N/A', 'N/A', 'staff');
+
 
 Select * from Users;
