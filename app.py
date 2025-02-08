@@ -1,11 +1,24 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import session
+from flask import jsonify
+from flask_mail import Mail, Message
+import random
+import string
 
 app = Flask(__name__)
 app.secret_key = "sysarch32"
+app.permanent_session_lifetime = timedelta(days=7)
+
+# Configure mail for forgot password functionality
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your-email-password'
+mail = Mail(app)
 
 # MSSQL Database Connection String
 app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://@LAPTOP-IEKCA1QT\\SQLEXPRESS01/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=yes"
@@ -36,16 +49,30 @@ class SessionRecord(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
     remaining_sessions = db.Column(db.Integer, nullable=False, default=10)  # Default to 10 sessions
 
-# Define the Reservations model
 class Reservation(db.Model):
+    __tablename__ = "Reservation"  # Ensure correct table name
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     student_id = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
     date = db.Column(db.String(20), nullable=False)
     time = db.Column(db.String(20), nullable=False)
+    purpose = db.Column(db.String(100), nullable=False)
+    lab = db.Column(db.String(50), nullable=False)
+    available_pc = db.Column(db.String(50), nullable=False)
 
     student = db.relationship("User", backref="reservations")
 
 
+class Lab(db.Model):
+    __tablename__ = "Labs"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    lab_name = db.Column(db.String(50), nullable=False)
+
+class PC(db.Model):
+    __tablename__ = "PCs"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    lab_id = db.Column(db.Integer, db.ForeignKey("Labs.id"), nullable=False)
+    pc_name = db.Column(db.String(50), nullable=False)
+    is_available = db.Column(db.Boolean, nullable=False, default=True)
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
@@ -76,27 +103,55 @@ def home():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "GET":
-        # Render the login page when accessed via GET request
-        return render_template("index.html")
-    
-    student_id = request.form.get("username")
-    password = request.form.get("password")
+    if request.method == "POST":
+        student_id = request.form.get("username")
+        password = request.form.get("password")
+        remember_me = 'remember_me' in request.form
 
-    user = User.query.filter_by(student_id=student_id).first()
-    if user and user.password == password:
-        session["user_id"] = user.id
-        session["role"] = user.role  # Store role in session
+        user = User.query.filter_by(student_id=student_id).first()
+        if user and user.password == password:
+            session["user_id"] = user.id
+            session["role"] = user.role  # Store role in session
+            
+            if remember_me:
+                session.permanent = True  # Session lasts longer if 'Remember Me' is checked
 
-        if user.role == "admin":
-            return redirect(url_for("admin_dashboard"))
-        elif user.role == "staff":
-            return redirect(url_for("staff_dashboard"))
+            if user.role == "admin":
+                return redirect(url_for("admin_dashboard"))
+            elif user.role == "staff":
+                return redirect(url_for("staff_dashboard"))
+            else:
+                return redirect(url_for("student_dashboard"))
         else:
-            return redirect(url_for("student_dashboard"))
-    else:
-        flash("Invalid ID or password", "error")
-        return redirect(url_for("home"))
+            flash("Invalid ID or password", "error")
+            return redirect(url_for("home"))
+
+    return render_template("index.html")
+
+@app.route("/forgot_password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email")
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            # Generate random token for password reset
+            token = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+            user.password_reset_token = token
+            db.session.commit()
+
+            # Send the token via email
+            msg = Message("Password Reset Request", sender="your-email@gmail.com", recipients=[email])
+            msg.body = f"Your password reset token is: {token}"
+            mail.send(msg)
+
+            flash("Password reset token sent to your email.", "success")
+            return redirect(url_for("home"))
+        else:
+            flash("Email not found!", "error")
+            return redirect(url_for("home"))
+
+    return render_template("forgot_password.html")
 
 @app.route("/admin_dashboard")
 def admin_dashboard():
@@ -214,31 +269,75 @@ def view_sessions():
 
     return f"You have {remaining_sessions} remaining sessions."
 
+@app.route("/get_available_pcs")
+def get_available_pcs():
+    lab_id = request.args.get("lab_id")
+
+    if not lab_id:
+        return jsonify([])
+
+    try:
+        lab_id = int(lab_id)  # Convert to integer
+    except ValueError:
+        return jsonify([])  # Return empty if invalid ID
+
+    available_pcs = PC.query.filter_by(lab_id=lab_id, is_available=True).all()
+    pcs_data = [{"id": pc.id, "pc_name": pc.pc_name} for pc in available_pcs]
+    return jsonify(pcs_data)
+
 @app.route("/make_reservation", methods=["GET", "POST"])
 def make_reservation():
     if "user_id" not in session:
         flash("Please log in first!", "error")
         return redirect(url_for("home"))
 
+    user = User.query.get(session["user_id"])
+    if not user:
+        flash("User not found!", "error")
+        return redirect(url_for("home"))
+
+    session_record = SessionRecord.query.filter_by(user_id=session["user_id"]).first()
+    remaining_sessions = session_record.remaining_sessions if session_record else 0
+
+    labs = Lab.query.all()  # Fetch all labs for dropdown
+
     if request.method == "POST":
         date = request.form.get("date")
         time = request.form.get("time")
+        purpose = request.form.get("purpose")
+        lab_id = request.form.get("lab")
+        pc_id = request.form.get("available_pc")
 
-        # Verify user exists before making reservation
-        user = User.query.get(session["user_id"])
-        if not user:
-            flash("User not found!", "error")
-            return redirect(url_for("home"))
+        lab = Lab.query.get(lab_id)
+        pc = PC.query.get(pc_id)
 
-        new_reservation = Reservation(student_id=user.id, date=date, time=time)
+        if not lab or not pc or not pc.is_available:
+            flash("Invalid lab or PC selection!", "error")
+            return redirect(url_for("make_reservation"))
+
+        new_reservation = Reservation(
+            student_id=user.id,
+            date=date,
+            time=time,
+            purpose=purpose,
+            lab=lab.lab_name,
+            available_pc=pc.pc_name
+        )
         db.session.add(new_reservation)
+
+        # Mark the PC as unavailable
+        pc.is_available = False
         db.session.commit()
 
         flash("Reservation made successfully!", "success")
         return redirect(url_for("success"))
 
-    return render_template("make_reservation.html")
-
+    return render_template(
+        "make_reservation.html",
+        user=user,
+        remaining_sessions=remaining_sessions,
+        labs=labs
+    )
 
 
 @app.route("/logout")

@@ -18,9 +18,16 @@
                 <div class="password-container">
                     <input type="password" id="login-password" name="password" placeholder="Password" required>
                     <div class="toggle-password" id="toggle-login-password" onclick="togglePassword('login-password', 'toggle-login-password')"></div>
-                </div>                
+                </div> 
+				<div class="remember-forgot">
+                    <label for="remember-me">
+                        Remember Me</a>
+                        <a><input type="checkbox" id="remember-me" name="remember_me">
+                    </label>
+                    <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
+                </div> 
                 <button type="submit">Login</button>
-                
+
                 {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
@@ -30,7 +37,7 @@
                     {% endfor %}
                 {% endif %}
                 {% endwith %}
-                
+
                 <div class="tabs">
                     <p>You Don't have an Account? <a href="javascript:void(0);" onclick="showForm('register')">Register</a></p>
                 </div>
@@ -82,9 +89,7 @@
 
                 <button type="submit">Register</button>
 
-                <div class="tabs">
-                    <button type="button" onclick="showForm('login')" class="active">Back</button>
-                </div>
+                    <button type="button" onclick="showForm('login')" class="back-button">Back to Login</button>
             </form>
         </div>
     </div>
@@ -98,22 +103,22 @@
         }
 
         function togglePassword(inputId, toggleId) {
-        let input = document.getElementById(inputId);
-        let toggle = document.getElementById(toggleId);
+            let input = document.getElementById(inputId);
+            let toggle = document.getElementById(toggleId);
 
-        if (input.type === "password") {
-            input.type = "text";
-            toggle.classList.add("closed"); // Change to "closed" state
-        } else {
-            input.type = "password";
-            toggle.classList.remove("closed"); // Change to "open" state
+            if (input.type === "password") {
+                input.type = "text";
+                toggle.classList.add("closed");
+            } else {
+                input.type = "password";
+                toggle.classList.remove("closed");
+            }
         }
-    }
 
         function validatePassword() {
             let password = document.getElementById("register-password").value;
             let repeatPassword = document.getElementById("repeat-password").value;
-            
+
             if (password !== repeatPassword) {
                 alert("Passwords do not match!");
                 return false;

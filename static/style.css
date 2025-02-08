@@ -1,3 +1,4 @@
+/* General Body Styles */
 body {
     font-family: Arial, sans-serif;
     background-image: url('UC.jpg'); /* Add background image */
@@ -10,6 +11,56 @@ body {
     height: 100vh;
     margin: 0;
 }
+
+/* Container */
+.container {
+    width: 50%;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Group */
+.form-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    width: 200px;
+    font-weight: bold;
+    text-align: left;
+}
+
+.form-group input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 300px;
+}
+
+/* Button */
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Login Container */
 .login-container {
     background-color: rgba(255, 255, 255, 0.8); /* Add a semi-transparent white background */
     padding: 20px;
@@ -20,9 +71,11 @@ body {
     margin: 20px; /* Add a gray margin around the container */
     border: 2px solid gray; /* Add a gray border */
 }
+
 .login-container h2 {
     margin-bottom: 20px;
 }
+
 .login-container input {
     width: 80%;
     padding: 10px;
@@ -30,6 +83,7 @@ body {
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+
 .login-container button {
     width: 50%;
     padding: 10px;
@@ -39,40 +93,54 @@ body {
     border-radius: 4px;
     cursor: pointer;
 }
+
 .login-container button:hover {
     background-color: gray;
 }
+
+/* Error Message */
 .error-message {
     color: red;
     margin-top: 10px;
 }
+
+/* Tabs */
 .tabs {
     display: flex;
     justify-content: space-around;
     margin-bottom: 20px;
 }
+
 .tabs button {
     background: none;
     border: none;
-    color: #007bff;
+    color: blue;
     cursor: pointer;
     font-size: 12px;
 }
+
 .tabs button.active {
     font-weight: bold;
     text-decoration: underline;
 }
+
+/* Form Section */
 .form-section {
     display: none;
 }
+
 .form-section.active {
     display: block;
 }
+
+/* Logo */
 .logo {
     width: 100px; /* Adjust the size as needed */
     height: auto;
     margin-bottom: 20px;
 }
+
+/* Select Dropdown */
 select {
     width: 85%;
     padding: 10px;
@@ -82,12 +150,7 @@ select {
     background-color: #fff;
     font-family: Arial, sans-serif;
 }
-.error-message {
-    color: red;
-    margin-top: 10px;
-    font-weight: bold;
-    font-size: 14px;
-}
+
 /* Student Dashboard Styles */
 .dashboard-container {
     background-color: rgba(255, 255, 255, 0.9);
@@ -125,10 +188,14 @@ select {
     color: gray;
 }
 
-/* Make Reservation Styles */
+/* Reservation Styles */
 .reservation-container {
-    max-width: 500px;
-    padding: 25px;
+    width: 500px;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #f9f9f9;
 }
 
 .reservation-container form {
@@ -142,12 +209,16 @@ select {
     margin: 10px 0 5px;
 }
 
-.reservation-container input, .reservation-container select {
-    width: 100%;
+.reservation-container input {
+    width: 250px;
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-bottom: 15px;
+}
+
+.reservation-container select{
+    width: 267px;
 }
 
 .reservation-container button {
@@ -162,6 +233,7 @@ select {
     background-color: gray;
 }
 
+/* Student Information Section */
 .student-info {
     text-align: left;
     margin-bottom: 20px;
@@ -171,6 +243,7 @@ select {
     font-size: 18px;
 }
 
+/* Actions Section */
 .actions {
     display: flex;
     justify-content: space-around;
@@ -193,10 +266,11 @@ select {
     background-color: red;
 }
 
+/* Back Button */
 .back-button {
     background-color: white !important; /* Force white background */
     border: 2px solid gray; /* Gray border */
-    color: skyblue !important; /* Ensure text is gray */
+    color: blue !important; /* Ensure text is gray */
     padding: 10px 20px;
     border-radius: 5px;
     text-decoration: none;
@@ -214,7 +288,7 @@ select {
     color: white !important; /* White text on hover */
 }
 
-/* Password container */
+/* Password Container */
 .password-container {
     position: relative;
     display: flex;
@@ -223,7 +297,7 @@ select {
     margin: 10px auto;
 }
 
-/* Input field for password */
+/* Input Field for Password */
 .password-container input {
     width: 100%;
     padding: 10px;
@@ -232,7 +306,7 @@ select {
     padding-right: 40px; /* Space for the eye icon */
 }
 
-/* Eye icon styling */
+/* Eye Icon Styling */
 .password-container .toggle-password {
     position: absolute;
     right: 10px;
@@ -244,7 +318,7 @@ select {
     transition: background-color 0.3s ease;
 }
 
-/* Eye "open" effect */
+/* Eye "Open" Effect */
 .password-container .toggle-password::before {
     content: "";
     position: absolute;
@@ -257,7 +331,7 @@ select {
     transform: translate(-50%, -50%);
 }
 
-/* Eye "closed" effect */
+/* Eye "Closed" Effect */
 .password-container .toggle-password.closed {
     background-color: black;
 }
@@ -269,7 +343,170 @@ select {
     transform: translate(-50%, -50%) rotate(45deg);
 }
 
+.remember-forgot {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 12px;
+}
 
+.remember-forgot label {
+    display: flex;
+    align-items: center;
+}
 
+.remember-forgot input[type="checkbox"] {
+    margin-left: 5px; /* Space between checkbox and text */
+}
+
+.remember-forgot a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.remember-forgot a:hover {
+    text-decoration: underline;
+}
+
+.forgot-password-container {
+    width: 100%;
+    max-width: 400px; /* Adjust to your desired container width */
+    margin: 0 auto; /* Centers the container horizontally */
+    padding: 20px;
+    background-color: #f9f9f9; /* Light background color */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Light shadow for a soft card effect */
+    text-align: center;
+}
+
+.forgot-password-container h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.forgot-password-container form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.forgot-password-container input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.forgot-password-container button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.forgot-password-container button:hover {
+    background-color: #0056b3;
+}
+
+.back-button {
+    display: inline-block;
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #007bff;
+    text-decoration: none;
+    border: 1px solid white;
+    padding: 10px 15px;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s;
+}
+
+.back-button:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Header Container */
+.header-container {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #007bff;
+    padding: 15px 30px;
+    color: white;
+}
+
+.header-title h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    margin-right: 15px;
+    background-color: #0056b3;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.nav-links a:hover {
+    background-color: #004085;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    margin: 20px;
+}
+
+.student-info {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+.student-info p {
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+/* Buttons inside the actions section */
+.button {
+    padding: 12px 20px;
+    font-size: 16px;
+    text-decoration: none;
+    color: white;
+    background-color: #007bff;
+    border-radius: 4px;
+    margin-right: 10px;
+    display: inline-block;
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+
+.logout {
+    background-color: #dc3545;
+}
+
+.logout:hover {
+    background-color: #c82333;
+}
 
 
