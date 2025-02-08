@@ -30,10 +30,41 @@ CREATE TABLE Reservations (
     FOREIGN KEY (student_id) REFERENCES Users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE Labs (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    lab_name NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE PCs (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    lab_id INT NOT NULL,
+    pc_name NVARCHAR(50) NOT NULL,
+    is_available BIT NOT NULL DEFAULT 1,
+    FOREIGN KEY (lab_id) REFERENCES Labs(id)
+);
+
 INSERT INTO Users (student_id, password, email, lastname, firstname, course, yearlevel, role)
 VALUES 
     ('admin', 'admin123', 'admin@example.com', 'Admin', 'User', 'N/A', 'N/A', 'admin'),
     ('staff', 'staff123', 'staff@example.com', 'Staff', 'User', 'N/A', 'N/A', 'staff');
 
+INSERT INTO PCs (lab_id, pc_name, is_available) 
+VALUES 
+((SELECT id FROM Labs WHERE lab_name = '524'), 'PC 1', 1),
+((SELECT id FROM Labs WHERE lab_name = '524'), 'PC 2', 1),
+((SELECT id FROM Labs WHERE lab_name = '526'), 'PC 3', 1),
+((SELECT id FROM Labs WHERE lab_name = '526'), 'PC 4', 1),
+((SELECT id FROM Labs WHERE lab_name = '530'), 'PC 5', 1),
+((SELECT id FROM Labs WHERE lab_name = '544'), 'PC 6', 1),
+((SELECT id FROM Labs WHERE lab_name = '542'), 'PC 7', 1);
+
+SELECT COLUMN_NAME 
+FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE TABLE_NAME = 'Reservation';
+
+ALTER TABLE Reservation 
+ADD purpose VARCHAR(100), 
+    lab VARCHAR(50), 
+    available_pc VARCHAR(50);
 
 Select * from Users;
