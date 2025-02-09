@@ -191,7 +191,7 @@ select {
 /* Reservation Styles */
 .reservation-container {
     width: 500px;
-    height: 95%;
+    height: 87%;
     margin: auto;
     padding: 20px;
     border: 1px solid #ccc;
@@ -452,22 +452,22 @@ select {
 .logo {
     display: flex;
     align-items: center;
-    gap: 10px; /* Adds spacing between the logos */
+    gap: 15px; /* Adds spacing between the logos */
 }
 
 .main-logo {
-    height: 55px; /* Adjust as needed */
+    height: 60px; /* Adjust as needed */
     width: auto;
 }
 
 
 .uc-logo {
-    height: 40px; /* Set a different height */
+    height: 45px; /* Set a different height */
     width: auto;
 }
 
 .psits-logo {
-    height: 40px; /* Set a different height */
+    height: 45px; /* Set a different height */
     width: auto;
 }
 
