@@ -50,9 +50,11 @@ class SessionRecord(db.Model):
     remaining_sessions = db.Column(db.Integer, nullable=False, default=10)  # Default to 10 sessions
 
 class Reservation(db.Model):
-    __tablename__ = "Reservation"  # Ensure correct table name
+    __tablename__ = "Reservation"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    student_id = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
+    student_id = db.Column(db.String(50), db.ForeignKey("Users.student_id"), nullable=False)
+    lastname = db.Column(db.String(50), nullable=False)  # Added column for lastname
+    firstname = db.Column(db.String(50), nullable=False)  # Added column for firstname
     date = db.Column(db.String(20), nullable=False)
     time = db.Column(db.String(20), nullable=False)
     purpose = db.Column(db.String(100), nullable=False)
@@ -316,7 +318,9 @@ def make_reservation():
             return redirect(url_for("make_reservation"))
 
         new_reservation = Reservation(
-            student_id=user.id,
+            student_id=user.student_id,
+            lastname=user.lastname,  # Store lastname
+            firstname=user.firstname,  # Store firstname
             date=date,
             time=time,
             purpose=purpose,

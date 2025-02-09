@@ -34,6 +34,7 @@
     </script>
 </head>
 <body>
+    {% include 'header.html' %}
     <div class="reservation-container">
         <center><h2>Make a Reservation</h2></center>
         <form method="POST" action="/make_reservation">
@@ -86,9 +87,6 @@
 
             <button type="submit">Reserve</button>
         </form>
-        <div class="tabs">
-            <button onclick="window.location.href='/student_dashboard'" class="back-button">Back</button>
-        </div>
     </div>
 </body>
 </html>

@@ -20,6 +20,9 @@
             <p><strong>COURSE:</strong> {{ user.course }}</p>
             <p><strong>YEAR LEVEL:</strong> {{ user.yearlevel }}</p>
             <p><strong>REMAINING SESSION:</strong> {{ remaining_sessions }}</p>
+            <center><div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="student-logo">
+            </div></center>
         </div>
         {% endif %}
     </div>

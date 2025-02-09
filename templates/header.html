@@ -2,9 +2,16 @@
     <div class="header-title">
         <h1>STUDENT DASHBOARD</h1>
     </div>
-    <div class="nav-links">
-        <a href="{{ url_for('edit_record') }}" class="button">Edit Record</a>
-        <a href="{{ url_for('make_reservation') }}" class="button">Reservation</a>
-        <a href="{{ url_for('logout') }}" class="button logout">Logout</a>
+    <div class="logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="main-logo">
+        <img src="{{ url_for('static', filename='UC_logo.png') }}" alt="Logo" class="uc-logo">
+        <img src="{{ url_for('static', filename='PSITS_LOGO.png') }}" alt="Logo" class="psits-logo">
     </div>
+    <div class="nav-links">
+        <a href="{{ url_for('student_dashboard') }}">Home</a>
+        <a href="{{ url_for('edit_record') }}">Edit Record</a>
+        <a href="{{ url_for('make_reservation') }}">Reservation</a>
+        <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+    </div>
+    
 </div>

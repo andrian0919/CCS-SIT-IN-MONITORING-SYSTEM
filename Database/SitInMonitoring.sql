@@ -22,13 +22,19 @@ CREATE TABLE Sessions (
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Reservations (
+CREATE TABLE Reservation (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    student_id INT NOT NULL,
-    date VARCHAR(20) NOT NULL,
-    time VARCHAR(20) NOT NULL,
-    FOREIGN KEY (student_id) REFERENCES Users(id) ON DELETE CASCADE
+    student_id VARCHAR(50) NOT NULL,
+    lastname VARCHAR(50) NOT NULL,
+    firstname VARCHAR(50) NOT NULL,
+    date DATE NOT NULL,
+    time TIME NOT NULL,
+    purpose VARCHAR(100) NOT NULL,
+    lab VARCHAR(50) NOT NULL,
+    available_pc VARCHAR(50) NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES Users(student_id) ON DELETE CASCADE
 );
+
 
 CREATE TABLE Labs (
     id INT PRIMARY KEY IDENTITY(1,1),
@@ -58,13 +64,6 @@ VALUES
 ((SELECT id FROM Labs WHERE lab_name = '544'), 'PC 6', 1),
 ((SELECT id FROM Labs WHERE lab_name = '542'), 'PC 7', 1);
 
-SELECT COLUMN_NAME 
-FROM INFORMATION_SCHEMA.COLUMNS 
-WHERE TABLE_NAME = 'Reservation';
 
-ALTER TABLE Reservation 
-ADD purpose VARCHAR(100), 
-    lab VARCHAR(50), 
-    available_pc VARCHAR(50);
 
-Select * from Users;
+Select * from Reservation;
