@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% include 'header.html' %}
+
+    <div class="history_dashboard-container">
+        <h2>Student History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Last Name</th>
+                    <th>First Name</th>
+                    <th>Lab</th>
+                    <th>PC</th>
+                    <th>Purpose</th>
+                    <th>Remaining Sessions</th> <!-- New Column -->
+                    <th>Date</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                <tr>
+                    <td>{{ reservation.student_id }}</td>
+                    <td>{{ reservation.lastname }}</td>
+                    <td>{{ reservation.firstname }}</td>
+                    <td>{{ reservation.lab }}</td>
+                    <td>{{ reservation.available_pc }}</td>
+                    <td>{{ reservation.purpose }}</td>
+                    <td>{{ remaining_sessions.get(reservation.student_id, 0) }}</td> <!-- Display Remaining Sessions -->
+                    <td>{{ reservation.date }}</td>
+                    <td>{{ reservation.time }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>            
+        </table>
+    </div>
+</body>
+</html>

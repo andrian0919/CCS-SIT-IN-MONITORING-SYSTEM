@@ -47,7 +47,7 @@ class SessionRecord(db.Model):
     __tablename__ = "Sessions"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
-    remaining_sessions = db.Column(db.Integer, nullable=False, default=10)  # Default to 10 sessions
+    remaining_sessions = db.Column(db.Integer, nullable=False, default=30)  # Default to 10 sessions
 
 class Reservation(db.Model):
     __tablename__ = "Reservation"
@@ -200,7 +200,13 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        session_record = SessionRecord(user_id=new_user.id, remaining_sessions=10)
+        # Set remaining sessions based on the course
+        if new_user.course in ["BSIT", "BSCS"]:
+            remaining_sessions = 30
+        else:
+            remaining_sessions = 15
+
+        session_record = SessionRecord(user_id=new_user.id, remaining_sessions=remaining_sessions)
         db.session.add(session_record)
         db.session.commit()
 
@@ -240,6 +246,30 @@ def student_dashboard():
 
     return render_template("student_dashboard.html", user=user, remaining_sessions=remaining_sessions)
 
+@app.route("/history")
+def history():
+    if "user_id" not in session:
+        flash("Please log in first!", "error")
+        return redirect(url_for("home"))
+
+    user = User.query.get(session["user_id"])
+    if not user:
+        flash("User not found!", "error")
+        return redirect(url_for("home"))
+
+    # Fetch reservation history for the student
+    reservations = Reservation.query.filter_by(student_id=user.student_id).all()
+
+    # Get remaining sessions for each student in reservations
+    student_ids = [res.student_id for res in reservations]
+    session_records = SessionRecord.query.filter(SessionRecord.user_id.in_(
+        db.session.query(User.id).filter(User.student_id.in_(student_ids))
+    )).all()
+
+    # Create a dictionary to map student_id to remaining sessions
+    remaining_sessions = {user.student_id: session.remaining_sessions for session in session_records for user in User.query.filter_by(id=session.user_id)}
+
+    return render_template("history.html", user=user, reservations=reservations, remaining_sessions=remaining_sessions)
 
 @app.route("/edit_record", methods=["GET", "POST"])
 def edit_record():
