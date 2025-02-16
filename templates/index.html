@@ -28,6 +28,9 @@
                 </div> 
                 <button type="submit">Login</button>
 
+                <div class="tabs">
+                    <p>You Don't have an Account? <a href="javascript:void(0);" onclick="showForm('register')">Register</a></p>
+                </div>
                 {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
@@ -37,10 +40,6 @@
                     {% endfor %}
                 {% endif %}
                 {% endwith %}
-
-                <div class="tabs">
-                    <p>You Don't have an Account? <a href="javascript:void(0);" onclick="showForm('register')">Register</a></p>
-                </div>
             </form>
         </div>
 
