@@ -66,4 +66,4 @@ VALUES
 
 
 
-Select * from Reservation;
+Select * from Users;

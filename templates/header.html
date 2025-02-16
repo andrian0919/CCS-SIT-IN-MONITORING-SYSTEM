@@ -11,7 +11,73 @@
         <a href="{{ url_for('student_dashboard') }}">Home</a>
         <a href="{{ url_for('edit_record') }}">Edit Record</a>
         <a href="{{ url_for('make_reservation') }}">Reservation</a>
-        <a href="{{ url_for('history') }}">History</a> <!-- Added History link -->
+        <a href="{{ url_for('history') }}">History</a>
+
+        <!-- Reports Link with Dropdown -->
+        <a href="javascript:void(0);" onclick="toggleDropdown()">Reports</a>
+        <div class="dropdown-content" id="report-dropdown">
+            <select id="report-type">
+                <option value="purpose">Per Purpose</option>
+                <option value="year_level">Per Year Level</option>
+            </select>
+            <button onclick="generateReport()">Generate</button>
+            <div id="report-container" style="display: none; text-align: center; margin-top: 20px;">
+                <!-- Clickable file link -->
+                <a id="report-link" href="#" download style="display: block; background: #007BFF; color: white; padding: 10px; border-radius: 5px; text-decoration: none; margin-bottom: 10px;">
+                    Download Report
+                </a>
+            </div>
+        </div>
+
         <a href="{{ url_for('logout') }}" class="Logout">Logout</a>
     </div>
 </div>
+
+
+<script>
+    function toggleDropdown() {
+        var dropdown = document.getElementById("report-dropdown");
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    function generateReport() {
+        var reportType = document.getElementById("report-type").value;
+        var reportFrame = document.getElementById("report-frame");
+        var reportContainer = document.getElementById("report-container");
+
+        reportFrame.src = "/download_report/" + reportType;
+        reportContainer.style.display = "block";
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", function(event) {
+        var dropdown = document.getElementById("report-dropdown");
+        var reportLink = document.querySelector(".nav-links a[onclick]");
+
+        if (!reportLink.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.style.display = "none";
+        }
+    });
+
+    function generateReport() {
+    var reportType = document.getElementById("report-type").value;
+
+    fetch("/download_report/" + reportType)
+        .then(response => response.json())
+        .then(data => {
+            var reportLink = document.getElementById("report-link");
+            var reportContainer = document.getElementById("report-container");
+
+            // Set the file name and download link
+            reportLink.href = data.file_url;
+            reportLink.download = data.file_name;
+            reportLink.textContent = "Download " + data.file_name;
+
+            // Show the container with the link
+            reportContainer.style.display = "block";
+        })
+        .catch(error => console.error("Error generating report:", error));
+}
+
+</script>
+

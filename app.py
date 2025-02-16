@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, send_from_directory, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta
@@ -7,6 +7,13 @@ from flask import jsonify
 from flask_mail import Mail, Message
 import random
 import string
+import pandas as pd
+from sqlalchemy import func
+import os
+from reports import generate_purpose_report, generate_year_level_report
+from database import db
+from sqlalchemy import text
+
 
 app = Flask(__name__)
 app.secret_key = "sysarch32"
@@ -24,7 +31,11 @@ mail = Mail(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://@LAPTOP-IEKCA1QT\\SQLEXPRESS01/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=yes"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-db = SQLAlchemy(app)
+# Initialize the database with the app
+db.init_app(app)
+
+REPORTS_DIR = os.path.join("static", "reports")
+os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # Define the User model
 class User(db.Model):
@@ -39,7 +50,6 @@ class User(db.Model):
     course = db.Column(db.String(50), nullable=True) 
     yearlevel = db.Column(db.String(20), nullable=True) 
     role = db.Column(db.String(20), nullable=False, default="student")
-
 
 
 # Define the Sessions model
@@ -130,6 +140,7 @@ def login():
 
     return render_template("index.html")
 
+
 @app.route("/forgot_password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -160,7 +171,52 @@ def admin_dashboard():
     if "user_id" not in session or session.get("role") != "admin":
         flash("Access denied!", "error")
         return redirect(url_for("home"))
-    return render_template("admin_dashboard.html")
+
+    active_sessions = (
+        db.session.query(User.student_id, User.firstname, User.lastname, SessionRecord.remaining_sessions)
+        .join(SessionRecord, User.id == SessionRecord.user_id)
+        .all()
+    )
+
+    report_data = (
+        db.session.query(User.yearlevel, Reservation.purpose, func.count(Reservation.id).label("count"))
+        .join(User, User.student_id == Reservation.student_id)
+        .group_by(User.yearlevel, Reservation.purpose)
+        .all()
+    )
+
+    return render_template("admin_dashboard.html", active_sessions=active_sessions, report_data=report_data)
+
+@app.route('/download_report/<report_type>')
+def download_report(report_type):
+    filename = f"report_{report_type}.xlsx"
+    file_path = os.path.join(REPORTS_DIR, filename)
+
+    if report_type == "purpose":
+        data = (
+            db.session.query(Reservation.purpose, func.count(Reservation.id).label("count"))
+            .group_by(Reservation.purpose)
+            .all()
+        )
+        df = pd.DataFrame(data, columns=["Purpose", "Count"])
+
+    elif report_type == "year_level":
+        data = (
+            db.session.query(User.yearlevel, func.count(User.id).label("count"))
+            .group_by(User.yearlevel)
+            .all()
+        )
+        df = pd.DataFrame(data, columns=["Year Level", "Count"])
+
+    else:
+        return jsonify({"error": "Invalid report type"}), 400
+
+    df.to_excel(file_path, index=False)
+    return jsonify({"file_url": f"/reports/{filename}", "file_name": filename})
+
+@app.route('/reports/<filename>')
+def serve_report(filename):
+    return send_from_directory(REPORTS_DIR, filename, as_attachment=True)
 
 @app.route("/staff_dashboard")
 def staff_dashboard():
@@ -372,6 +428,33 @@ def make_reservation():
         remaining_sessions=remaining_sessions,
         labs=labs
     )
+
+@app.route("/end_session/<student_id>", methods=["POST"])
+def end_session(student_id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    user = User.query.filter_by(student_id=student_id).first()
+    if not user:
+        return jsonify({"success": False, "error": "Student not found"}), 404
+
+    session_record = SessionRecord.query.filter_by(user_id=user.id).first()
+    if not session_record or session_record.remaining_sessions <= 0:
+        return jsonify({"success": False, "error": "No remaining sessions"}), 400
+
+    # Deduct one session
+    session_record.remaining_sessions -= 1
+
+    # Free up the PC
+    latest_reservation = Reservation.query.filter_by(student_id=student_id).order_by(Reservation.id.desc()).first()
+    if latest_reservation:
+        pc = PC.query.filter_by(pc_name=latest_reservation.available_pc).first()
+        if pc:
+            pc.is_available = True  # Make the PC available again
+
+    db.session.commit()
+
+    return jsonify({"success": True, "remaining_sessions": session_record.remaining_sessions})
 
 
 @app.route("/logout")

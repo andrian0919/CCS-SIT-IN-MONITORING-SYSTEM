@@ -152,16 +152,6 @@ select {
 }
 
 /* Student Dashboard Styles */
-.dashboard-container {
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    text-align: center;
-    width: 30%;
-    margin: auto;
-    
-}
 
 .dashboard-container h2 {
     text-align: center;
@@ -485,6 +475,7 @@ tr:hover {
     color: white;
 }
 
+
 .logo {
     display: flex;
     align-items: center;
@@ -577,7 +568,11 @@ tr:hover {
 }
 
 .Logout {
+    text-decoration: none;
+    color: white;
     background-color: red;
+    padding: 10px 15px;
+    border-radius: 5px;
 }
 
 @media (max-width: 768px) {
@@ -601,4 +596,252 @@ tr:hover {
     }
 }
 
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
 
+.admin-container{
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    width: 60%;
+    margin: auto;
+}
+
+.admin-header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 5%;
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: blue;
+    padding: 15px 30px;
+    color: white;
+}
+
+.admin-header h1 {
+    margin: 0;
+}
+
+.admin-logout {
+    text-decoration: none;
+    color: white;
+    background-color: blue;
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+.admin-logout:hover {
+    background-color: gray;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 10px;
+    text-align: center;
+
+}
+
+th {
+    background-color: #444;
+    color: white;
+}
+
+.session-end-btn {
+    background-color: blue;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.session-end-btn:hover {
+    background-color: darkblue;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.pagination button {
+    width: 100px;
+    font-size: 16px; /* Adjust text size */
+    padding: 10px 20px; /* Adjust padding */
+    margin: 0 5px; /* Adjust spacing */
+    border: none;
+    background-color: blue;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.pagination button:disabled {
+    background-color: gray;
+    cursor: not-allowed;
+}
+
+.pagination button:hover:not(:disabled) {
+    background-color: darkblue;
+}
+
+#pageNumber {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0 10px;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    width: 300px;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.report-section{
+    position: fixed;
+    width: 20%;
+    height: 5%;
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: blue;
+    padding: 15px 30px;
+    color: white;  
+
+}
+
+.search-container input {
+    width: 100%;
+    padding: 10px 10px 10px 40px; /* Space for the icon */
+    border: 1px solid black;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: black;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 50px;
+    background-color: white;
+    padding: 10px;
+    margin-top: 5px;
+}
+
+.dropdown-content select, .dropdown-content button {
+    width: 100%;
+    margin-top: 5px;
+}
+
+.dashboard-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+
+.lab-rules {
+    width: 50%;
+    background: #f8f9fa;
+    position: relative;
+    right: 50px;
+    bottom: 23px;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-height: 350px; /* Adjust height to fit layout */
+    overflow: hidden; /* Prevents expanding beyond max height */
+}
+
+.announcements{
+    width: 30%;
+    background: #f8f9fa;
+    position: relative;
+    right: 150px;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-height: 350px; /* Adjust height to fit layout */
+    overflow: hidden; /* Prevents expanding beyond max height */
+
+}
+
+.dashboard-container {
+    width: 60%;
+    position: relative;
+    right: 179px;
+    text-align: center;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.lab-rules h3, .announcements h3 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+/* Scrollable Lab Rules Content */
+.lab-rules-content {
+    max-height: 250px; /* Controls the scrollable area */
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* Custom Scrollbar */
+.lab-rules-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lab-rules-content::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 3px;
+}
+
+.lab-rules-content::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
+/* Custom Scrollbar */
+.announcements-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.announcements-content::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 3px;
+}
+
+.announcements-content::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
