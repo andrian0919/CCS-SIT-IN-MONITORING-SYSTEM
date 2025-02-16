@@ -623,6 +623,8 @@ body {
     background-color: blue;
     padding: 15px 30px;
     color: white;
+    font-size: 13px;
+    
 }
 
 .admin-header h1 {
