@@ -85,6 +85,20 @@ class PC(db.Model):
     lab_id = db.Column(db.Integer, db.ForeignKey("Labs.id"), nullable=False)
     pc_name = db.Column(db.String(50), nullable=False)
     is_available = db.Column(db.Boolean, nullable=False, default=True)
+
+class Announcement(db.Model):
+    __tablename__ = "Announcements"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    announcement_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+class Feedback(db.Model):
+    __tablename__ = "Feedback"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    student_id = db.Column(db.String(50), nullable=False)
+    feedback_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
@@ -172,12 +186,14 @@ def admin_dashboard():
         flash("Access denied!", "error")
         return redirect(url_for("home"))
 
+    # Fetch active sessions
     active_sessions = (
         db.session.query(User.student_id, User.firstname, User.lastname, SessionRecord.remaining_sessions)
         .join(SessionRecord, User.id == SessionRecord.user_id)
         .all()
     )
 
+    # Fetch report data
     report_data = (
         db.session.query(User.yearlevel, Reservation.purpose, func.count(Reservation.id).label("count"))
         .join(User, User.student_id == Reservation.student_id)
@@ -185,7 +201,15 @@ def admin_dashboard():
         .all()
     )
 
-    return render_template("admin_dashboard.html", active_sessions=active_sessions, report_data=report_data)
+    # Fetch feedback data
+    feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
+
+    return render_template(
+        "admin_dashboard.html",
+        active_sessions=active_sessions,
+        report_data=report_data,
+        feedbacks=feedbacks  # Pass feedback data to the template
+    )
 
 @app.route('/download_report/<report_type>')
 def download_report(report_type):
@@ -291,16 +315,34 @@ def student_dashboard():
         flash("Please log in first!", "error")
         return redirect(url_for("home"))
     
-    user = User.query.get(session["user_id"])  # Fetch user details
+    user = User.query.get(session["user_id"])
     if not user:
         flash("User not found!", "error")
         return redirect(url_for("home"))
 
-    # Fetch remaining sessions
     session_record = SessionRecord.query.filter_by(user_id=session["user_id"]).first()
     remaining_sessions = session_record.remaining_sessions if session_record else 0
 
-    return render_template("student_dashboard.html", user=user, remaining_sessions=remaining_sessions)
+    # Define the uploads folder path
+    uploads_folder = os.path.join("static", "uploads")
+
+    # Get all available image files (.png and .jpg)
+    available_images = [f for f in os.listdir(uploads_folder) if f.endswith((".png", ".jpg"))]
+
+    # If images exist, randomly select one. Otherwise, use default.
+    if available_images:
+        profile_pic_filename = random.choice(available_images)
+    else:
+        profile_pic_filename = "default.png"
+
+    profile_pic_url = url_for('static', filename=f'uploads/{profile_pic_filename}')
+
+    return render_template("student_dashboard.html", user=user, remaining_sessions=remaining_sessions, profile_pic=profile_pic_url)
+
+@app.route('/static/<path:filename>')
+def serve_uploads(filename):
+    return send_from_directory('static/uploads', filename)
+
 
 @app.route("/history")
 def history():
@@ -336,14 +378,32 @@ def edit_record():
     user = User.query.get(session["user_id"])
 
     if request.method == "POST":
-        user.lastname = request.form.get("lastname")
-        user.firstname = request.form.get("firstname")
-        user.course = request.form.get("course")
-        user.yearlevel = request.form.get("yearlevel")
-        
+        user.lastname = request.form.get("lastname", user.lastname)
+        user.firstname = request.form.get("firstname", user.firstname)
+        user.course = request.form.get("course", user.course)
+        user.yearlevel = request.form.get("yearlevel", user.yearlevel)
+
         db.session.commit()
+
+        # 🔹 **Fix Remaining Sessions Disappearing**
+        session_record = SessionRecord.query.filter_by(user_id=session["user_id"]).first()
+        remaining_sessions = session_record.remaining_sessions if session_record else 0
+
+        # 🔹 **Fix Profile Picture Disappearing**
+        uploads_folder = os.path.join("static", "uploads")
+        available_images = [f for f in os.listdir(uploads_folder) if f.endswith((".png", ".jpg"))]
+
+        if available_images:
+            profile_pic_filename = random.choice(available_images)  # Random profile pic per login
+        else:
+            profile_pic_filename = "default.png"
+
+        profile_pic_url = url_for('static', filename=f'uploads/{profile_pic_filename}')
+
         flash("Record updated successfully!", "success")
-        return redirect(url_for("success"))
+
+        # 🔹 **Return updated dashboard without pressing Home**
+        return render_template("student_dashboard.html", user=user, remaining_sessions=remaining_sessions, profile_pic=profile_pic_url)
 
     return render_template("edit_record.html", user=user)
 
@@ -456,12 +516,102 @@ def end_session(student_id):
 
     return jsonify({"success": True, "remaining_sessions": session_record.remaining_sessions})
 
+@app.route("/admin/post_announcement", methods=["POST"])
+def post_announcement():
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    announcement_text = request.form.get("announcement_text")
+    if not announcement_text:
+        return jsonify({"success": False, "error": "Announcement text is required"}), 400
+
+    new_announcement = Announcement(announcement_text=announcement_text)
+    db.session.add(new_announcement)
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Announcement posted successfully"})
+
+@app.route("/get_announcements")
+def get_announcements():
+    announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
+    announcements_data = [{"id": ann.id, "text": ann.announcement_text, "created_at": ann.created_at} for ann in announcements]
+    return jsonify(announcements_data)
+
+@app.route("/edit_announcement/<int:id>", methods=["POST"])
+def edit_announcement(id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    announcement = Announcement.query.get(id)
+    if not announcement:
+        return jsonify({"success": False, "error": "Announcement not found"}), 404
+
+    new_text = request.json.get("text")
+    if not new_text:
+        return jsonify({"success": False, "error": "Announcement text is required"}), 400
+
+    announcement.announcement_text = new_text
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Announcement updated successfully"})
+
+@app.route("/delete_announcement/<int:id>", methods=["DELETE"])
+def delete_announcement(id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    announcement = Announcement.query.get(id)
+    if not announcement:
+        return jsonify({"success": False, "error": "Announcement not found"}), 404
+
+    db.session.delete(announcement)
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Announcement deleted successfully"})
+
+@app.route("/announcements")
+def announcements():
+    if "user_id" not in session or session.get("role") != "admin":
+        flash("Access denied!", "error")
+        return redirect(url_for("home"))
+
+    return render_template("announcements.html")
+
+@app.route("/submit_feedback", methods=["POST"])
+def submit_feedback():
+    if "user_id" not in session:
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    student_id = data.get("student_id")
+    feedback_text = data.get("feedback_text")
+
+    if not student_id or not feedback_text:
+        return jsonify({"success": False, "error": "Missing data"}), 400
+
+    new_feedback = Feedback(student_id=student_id, feedback_text=feedback_text)
+    db.session.add(new_feedback)
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Feedback submitted successfully"})
+
+@app.route("/feedback")
+def feedback():
+    if "user_id" not in session or session.get("role") != "admin":
+        flash("Access denied!", "error")
+        return redirect(url_for("home"))
+
+    # Fetch feedback data
+    feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
+
+    return render_template("feedback.html", feedbacks=feedbacks)
 
 @app.route("/logout")
 def logout():
     session.pop("user_id", None)
     flash("Logged out successfully!", "success")
     return redirect(url_for("home"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)

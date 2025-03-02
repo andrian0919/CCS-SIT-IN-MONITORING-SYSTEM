@@ -59,10 +59,10 @@
                 <p><strong>YEAR LEVEL:</strong> {{ user.yearlevel }}</p>
                 <p><strong>REMAINING SESSION:</strong> {{ remaining_sessions }}</p>
                 <center>
-                    <div class="logo">
-                        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="student-logo">
+                    <div class="profile-pic">
+                        <img src="{{ profile_pic }}" alt="Profile Picture" class="student-profile">
                     </div>
-                </center>
+                </center>                
             </div>
             {% endif %}
         </div>
@@ -70,17 +70,53 @@
         <!-- Announcements (Right) -->
         <div class="announcements">
             <h3>Announcements</h3>
-            <div class="announcements-content">
-            <ul>
-                <li>System maintenance on Monday.</li>
-                <li>New lab schedules updated.</li>
-                <li>📢 <strong>Sit-in Sessions Update:</strong> Students must book their sit-in sessions in advance.</li>
-                <li>💻 Ensure to check your remaining sit-in sessions before reserving.</li>
-                <li>📅 Sit-in sessions are available from 8:00 AM to 6:00 PM, Monday to Friday.</li>
-                <li>🔔 Failure to attend a booked sit-in session without notice may affect future reservations.</li>
-            </ul>
+            <div class="announcements-content" id="announcementsContent">
+                <!-- Announcements will be dynamically inserted here -->
             </div>
         </div>        
     </div>
+
+    <script>
+        function fetchAnnouncements() {
+            fetch('/get_announcements')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Announcements data received:", data);  // Log the data to the console
+                    const announcementsContent = document.getElementById('announcementsContent');
+                    announcementsContent.innerHTML = '';  // Clear existing content
+
+                    if (data.length === 0) {
+                        announcementsContent.innerHTML = '<p>No announcements available.</p>';
+                        return;
+                    }
+
+                    data.forEach(ann => {
+                        const announcementDiv = document.createElement('div');
+                        announcementDiv.className = 'announcement';
+                        announcementDiv.innerHTML = `
+                            <p>${ann.text}</p>
+                            <small>Posted on: ${new Date(ann.created_at).toLocaleString()}</small>
+                        `;
+                        announcementsContent.appendChild(announcementDiv);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching announcements:', error);
+                    const announcementsContent = document.getElementById('announcementsContent');
+                    announcementsContent.innerHTML = '<p>Failed to load announcements. Please try again later.</p>';
+                });
+        }
+
+        // Fetch announcements on page load
+        document.addEventListener('DOMContentLoaded', fetchAnnouncements);
+
+        // Optionally, refresh announcements every 5 minutes
+        setInterval(fetchAnnouncements, 300000);
+    </script>
 </body>
 </html>

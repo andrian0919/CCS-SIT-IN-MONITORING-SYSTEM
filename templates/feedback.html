@@ -1,0 +1,51 @@
+<!-- templates/feedback.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<style>
+    .logo {
+        display: flex;
+        align-items: center;
+        position: relative;
+        right: 10%;
+        gap: 15px; /* Adjust space between logos */
+    }
+</style>
+<body>
+    <div class="admin-header">
+        <h1>FEEDBACKS</h1>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="main-logo">
+            <img src="{{ url_for('static', filename='UC_logo.png') }}" alt="Logo" class="uc-logo">
+            <img src="{{ url_for('static', filename='PSITS_LOGO.png') }}" alt="Logo" class="psits-logo">
+        </div>
+        <a href="/admin_dashboard" class="admin-logout">Back to Dashboard</a>
+    </div>
+    <div class="feedback-container">
+        <center><h2>Feedbacks</h2></center>
+        <table id="feedbackTable">
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Feedback</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for feedback in feedbacks %}
+                <tr>
+                    <td>{{ feedback.student_id }}</td>
+                    <td>{{ feedback.feedback_text }}</td>
+                    <td>{{ feedback.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
