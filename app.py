@@ -13,6 +13,7 @@ import os
 from reports import generate_purpose_report, generate_year_level_report
 from database import db
 from sqlalchemy import text
+from flask_wtf.csrf import generate_csrf
 
 
 app = Flask(__name__)
@@ -27,8 +28,7 @@ app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
 app.config['MAIL_PASSWORD'] = 'your-email-password'
 mail = Mail(app)
 
-# MSSQL Database Connection String
-app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://@LAPTOP-IEKCA1QT\\SQLEXPRESS01/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=yes"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root@localhost/SitInMonitoring"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize the database with the app
@@ -70,6 +70,7 @@ class Reservation(db.Model):
     purpose = db.Column(db.String(100), nullable=False)
     lab = db.Column(db.String(50), nullable=False)
     available_pc = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(50), default="Pending")
 
     student = db.relationship("User", backref="reservations")
 
@@ -186,10 +187,37 @@ def admin_dashboard():
         flash("Access denied!", "error")
         return redirect(url_for("home"))
 
-    # Fetch active sessions
+    # Fetch active sessions with Purpose, Lab, and Status
     active_sessions = (
-        db.session.query(User.student_id, User.firstname, User.lastname, SessionRecord.remaining_sessions)
+        db.session.query(
+            User.student_id,
+            User.firstname,
+            User.lastname,
+            Reservation.purpose,
+            Reservation.lab,
+            Reservation.status,
+            SessionRecord.remaining_sessions
+        )
         .join(SessionRecord, User.id == SessionRecord.user_id)
+        .join(Reservation, User.student_id == Reservation.student_id)
+        .filter(Reservation.status == "Approved")
+        .all()
+    )
+
+     # Fetch pending reservations
+    pending_reservations = (
+        db.session.query(
+            Reservation.id,
+            User.student_id,
+            User.firstname,
+            User.lastname,
+            Reservation.lab,
+            Reservation.purpose,
+            Reservation.date,
+            Reservation.time
+        )
+        .join(User, User.student_id == Reservation.student_id)
+        .filter(Reservation.status == "Pending")  # Only show pending reservations
         .all()
     )
 
@@ -446,39 +474,42 @@ def make_reservation():
 
     session_record = SessionRecord.query.filter_by(user_id=session["user_id"]).first()
     remaining_sessions = session_record.remaining_sessions if session_record else 0
-
-    labs = Lab.query.all()  # Fetch all labs for dropdown
+    labs = Lab.query.all()
 
     if request.method == "POST":
         date = request.form.get("date")
         time = request.form.get("time")
         purpose = request.form.get("purpose")
         lab_id = request.form.get("lab")
-        pc_id = request.form.get("available_pc")
+        pc_input = request.form.get("available_pc")
 
         lab = Lab.query.get(lab_id)
-        pc = PC.query.get(pc_id)
-
-        if not lab or not pc or not pc.is_available:
-            flash("Invalid lab or PC selection!", "error")
+        if not lab:
+            flash("Invalid laboratory selection!", "error")
             return redirect(url_for("make_reservation"))
 
+        if not pc_input:
+            flash("Please enter a valid PC number.", "error")
+            return redirect(url_for("make_reservation"))
+
+        # Debugging: Print collected data
+        print(f"Saving reservation: {user.student_id}, {user.lastname}, {user.firstname}, {date}, {time}, {purpose}, {lab.lab_name}, {pc_input}")
+
+        # Save reservation
         new_reservation = Reservation(
             student_id=user.student_id,
-            lastname=user.lastname,  # Store lastname
-            firstname=user.firstname,  # Store firstname
+            lastname=user.lastname,
+            firstname=user.firstname,
             date=date,
             time=time,
             purpose=purpose,
             lab=lab.lab_name,
-            available_pc=pc.pc_name
+            available_pc=pc_input,
+            status="Pending"  # Default status
         )
+        
         db.session.add(new_reservation)
-
-        # Mark the PC as unavailable
-        pc.is_available = False
         db.session.commit()
-
         flash("Reservation made successfully!", "success")
         return redirect(url_for("success"))
 
@@ -488,6 +519,13 @@ def make_reservation():
         remaining_sessions=remaining_sessions,
         labs=labs
     )
+
+@app.route("/admin_reservations")
+def admin_reservations():
+    reservations = Reservation.query.all()
+    print("Fetched reservations:", reservations)  # Debugging
+    return render_template("Reservation_Actions.html", reservations=reservations)
+
 
 @app.route("/end_session/<student_id>", methods=["POST"])
 def end_session(student_id):
@@ -605,6 +643,110 @@ def feedback():
     feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
 
     return render_template("feedback.html", feedbacks=feedbacks)
+
+@app.route("/reset_session/<student_id>", methods=["POST"])
+def reset_session(student_id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    user = User.query.filter_by(student_id=student_id).first()
+    if not user:
+        return jsonify({"success": False, "error": "Student not found"}), 404
+
+    session_record = SessionRecord.query.filter_by(user_id=user.id).first()
+    if not session_record:
+        return jsonify({"success": False, "error": "Session record not found"}), 404
+
+    # Reset the remaining sessions to the default value
+    if user.course in ["BSIT", "BSCS"]:
+        session_record.remaining_sessions = 30  # Default for BSIT and BSCS
+    else:
+        session_record.remaining_sessions = 15  # Default for other courses
+
+    db.session.commit()
+
+    return jsonify({"success": True, "remaining_sessions": session_record.remaining_sessions})
+
+@app.route("/sit_in/<student_id>", methods=["POST"])
+def sit_in(student_id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    user = User.query.filter_by(student_id=student_id).first()
+    if not user:
+        return jsonify({"success": False, "error": "Student not found"}), 404
+
+    session_record = SessionRecord.query.filter_by(user_id=user.id).first()
+    if not session_record or session_record.remaining_sessions <= 0:
+        return jsonify({"success": False, "error": "No remaining sessions"}), 400
+
+    # Deduct one session
+    session_record.remaining_sessions -= 1
+
+    # Mark the student as "Sit-in" in their latest reservation
+    latest_reservation = Reservation.query.filter_by(student_id=student_id).order_by(Reservation.id.desc()).first()
+    if latest_reservation:
+        latest_reservation.status = "Sit-in"
+        db.session.commit()
+
+    return jsonify({"success": True, "remaining_sessions": session_record.remaining_sessions})
+
+@app.route("/update_status")
+def update_status():
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    reservations = Reservation.query.all()
+    for reservation in reservations:
+        reservation.status = "Active"  # Set default status
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Status updated successfully!"})
+
+@app.route("/accept_reservation/<int:reservation_id>", methods=["POST"])
+def accept_reservation(reservation_id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    reservation = Reservation.query.get(reservation_id)
+    if not reservation:
+        return jsonify({"success": False, "error": "Reservation not found"}), 404
+
+    # Update the reservation status to "Approved"
+    reservation.status = "Approved"
+    db.session.commit()
+
+    return jsonify({"success": True})
+
+@app.route("/decline_reservation/<int:reservation_id>", methods=["POST"])
+def decline_reservation(reservation_id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    reservation = Reservation.query.get(reservation_id)
+    if not reservation:
+        return jsonify({"success": False, "error": "Reservation not found"}), 404
+
+    # Update the reservation status to "Declined"
+    reservation.status = "Declined"
+    db.session.commit()
+
+    return jsonify({"success": True})
+
+@app.route('/Reservation_Actions')
+def reservation_actions():
+    if "user_id" not in session or session.get("role") != "admin":
+        flash("Access denied!", "error")
+        return redirect(url_for("home"))
+    reservations = Reservation.query.all()
+    
+    return render_template("Reservation_Actions.html", reservations=reservations)
+
+@app.after_request
+def add_csrf_cookie(response):
+    response.set_cookie("csrf_token", generate_csrf())
+    return response
+
 
 @app.route("/logout")
 def logout():

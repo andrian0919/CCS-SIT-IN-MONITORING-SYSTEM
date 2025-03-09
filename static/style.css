@@ -658,7 +658,7 @@ body {
     border-radius: 5px;
     font-size: medium;
     position: relative;
-    left: 35%;
+    left: 33%;
 }
 
 .reports:hover {
@@ -989,7 +989,7 @@ th {
     border-radius: 5px;
     font-size: medium;
     position: relative;
-    left: 9%;
+    left: 6%;
 }
 
 .edit-announcement-container {
@@ -1085,6 +1085,17 @@ th {
 }
 
 .feedback-header {
+    text-decoration: none;
+    color: white;
+    background-color: blue;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: medium;
+    position: relative;
+    left: 12%;
+}
+
+.reservation-header {
     text-decoration: none;
     color: white;
     background-color: blue;

@@ -49,6 +49,21 @@ CREATE TABLE PCs (
     FOREIGN KEY (lab_id) REFERENCES Labs(id)
 );
 
+CREATE TABLE Announcements (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    announcement_text TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT GETDATE()
+);
+
+CREATE TABLE Feedbacks (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    student_id VARCHAR(50) NOT NULL,
+    feedback_text TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (student_id) REFERENCES Users(student_id) ON DELETE CASCADE
+);
+
+
 INSERT INTO Users (student_id, password, email, lastname, firstname, course, yearlevel, role)
 VALUES 
     ('admin', 'admin123', 'admin@example.com', 'Admin', 'User', 'N/A', 'N/A', 'admin'),
@@ -66,4 +81,8 @@ VALUES
 
 
 
-Select * from Users;
+Select * from Announcements;
+
+--# MSSQL Database Connection String
+--app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://@LAPTOP-IEKCA1QT\\SQLEXPRESS01/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=yes"
+--app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = FalseS

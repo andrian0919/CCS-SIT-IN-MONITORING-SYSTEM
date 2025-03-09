@@ -10,9 +10,71 @@
             align-items: center;
             position: relative;
             right: 0%;
-            left: 10%;
+            left: 14%;
             gap: 15px; /* Adjust space between logos */
         }
+            .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0,0,0);
+        background-color: rgba(0,0,0,0.4);
+        padding-top: 60px;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 50%; /* Adjust width as needed */
+        max-width: 500px; /* Optional: Set a max-width for better readability */
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    /* Form styling for vertical layout */
+    .modal-content form {
+        display: flex;
+        flex-direction: column; /* Stack form elements vertically */
+        gap: 10px; /* Space between form elements */
+    }
+
+    .modal-content label {
+        font-weight: bold;
+        margin-bottom: 5px; /* Space between label and input */
+    }
+
+    .modal-content input {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 100%; /* Full width for inputs */
+    }
+
+    .actions {
+        display: flex;
+        gap: 5px; /* Space between buttons */
+        justify-content: flex-end; /* Align buttons to the right */
+        margin-top: 5px; /* Space above the buttons */
+    }
     </style>
 </head>
 <body>
@@ -39,11 +101,12 @@
             </div>
         </div>
 
+        <a href="/Reservation_Actions" class="reservation-header">Reservations</a>
         <a href="/feedback" class="feedback-header">Feedbacks</a>
         <a href="/announcements" class="announcement-header">Announcements</a>
         <a href="/logout" class="admin-logout">Logout</a>
     </div>
-    
+
     <div class="admin-container">
         <h2>Active Student Sessions</h2>
 
@@ -61,6 +124,9 @@
                     <tr>
                         <th>Student ID</th>
                         <th>Name</th>
+                        <th>Purpose</th>
+                        <th>Lab</th>
+                        <th>Status</th>
                         <th>Remaining Sessions</th>
                         <th>Action</th>
                     </tr>
@@ -70,9 +136,16 @@
                     <tr>
                         <td>{{ session.student_id }}</td>
                         <td>{{ session.firstname }} {{ session.lastname }}</td>
+                        <td>{{ session.purpose }}</td>
+                        <td>{{ session.lab }}</td>
+                        <td>{{ session.status }}</td>
                         <td>{{ session.remaining_sessions }}</td>
                         <td>
-                            <button class="session-end-btn" onclick="endSession('{{ session.student_id }}')">End Session</button>
+                            <div class="actions">
+                                <button class="session-end-btn" onclick="endSession('{{ session.student_id }}')">End Session</button>
+                                <button class="reset-session-btn" onclick="resetSession('{{ session.student_id }}')">Reset Session</button>
+                                <button class="sit-in-btn" onclick="openSitInModal('{{ session.student_id }}', '{{ session.firstname }}', '{{ session.lastname }}', '{{ session.purpose }}', '{{ session.lab }}', '{{ session.remaining_sessions }}')">Sit-in</button>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -84,6 +157,34 @@
             <button onclick="prevPage()">Previous</button>
             <span id="pageNumber">1</span>
             <button onclick="nextPage()">Next</button>
+        </div>
+    </div>
+
+    <div id="sitInModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSitInModal()">&times;</span>
+            <h2>Sit-In Form</h2>
+            <form id="sitInForm">
+                <label for="studentId">Student ID:</label>
+                <input type="text" id="studentId" name="studentId" readonly>
+    
+                <label for="fullName">Full Name:</label>
+                <input type="text" id="fullName" name="fullName" readonly>
+    
+                <label for="purpose">Purpose:</label>
+                <input type="text" id="purpose" name="purpose" readonly>
+    
+                <label for="lab">Lab:</label>
+                <input type="text" id="lab" name="lab" readonly>
+    
+                <label for="remainingSessions">Remaining Sessions:</label>
+                <input type="text" id="remainingSessions" name="remainingSessions" readonly>
+    
+                <div class="actions">
+                    <button type="button" onclick="confirmSitIn()">Confirm</button>
+                    <button type="button" onclick="closeSitInModal()">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -153,6 +254,60 @@
                     location.reload();
                 } else {
                     alert("Error: " + (data.error || "Failed to end session."));
+                }
+            })
+            .catch(error => {
+                alert("Network error. Please try again.");
+            });
+        }
+
+        function resetSession(studentId) {
+            if (!confirm("Are you sure you want to reset this session?")) {
+                return;
+            }
+
+            fetch('/reset_session/' + studentId, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Session reset. Remaining sessions updated.");
+                    location.reload();
+                } else {
+                    alert("Error: " + (data.error || "Failed to reset session."));
+                }
+            })
+            .catch(error => {
+                alert("Network error. Please try again.");
+            });
+        }
+
+        function openSitInModal(studentId, firstName, lastName, purpose, lab, remainingSessions) {
+            document.getElementById("studentId").value = studentId;
+            document.getElementById("fullName").value = `${firstName} ${lastName}`;
+            document.getElementById("purpose").value = purpose;
+            document.getElementById("lab").value = lab;
+            document.getElementById("remainingSessions").value = remainingSessions;
+            document.getElementById("sitInModal").style.display = "block";
+        }
+
+        function closeSitInModal() {
+            document.getElementById("sitInModal").style.display = "none";
+        }
+
+        function confirmSitIn() {
+            const studentId = document.getElementById("studentId").value;
+            fetch('/sit_in/' + studentId, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Student has been sat in.");
+                    location.reload();
+                } else {
+                    alert("Error: " + (data.error || "Failed to sit in student."));
                 }
             })
             .catch(error => {

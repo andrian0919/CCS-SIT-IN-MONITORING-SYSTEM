@@ -23,6 +23,8 @@
                     <th>Remaining Sessions</th> <!-- New Column -->
                     <th>Date</th>
                     <th>Time</th>
+                    <th>Status</th>
+
                 </tr>
             </thead>
             <tbody>
@@ -37,6 +39,7 @@
                     <td>{{ remaining_sessions.get(reservation.student_id, 0) }}</td> <!-- Display Remaining Sessions -->
                     <td>{{ reservation.date }}</td>
                     <td>{{ reservation.time }}</td>
+                    <td>{{ reservation.status }}</td>
                 </tr>
                 {% endfor %}
             </tbody>         

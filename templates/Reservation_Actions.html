@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .logo {
+            display: flex;
+            align-items: center;
+            position: relative;
+            right: 9%;
+            gap: 15px; /* Adjust space between logos */
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-header">
+        <h1>Reservations</h1>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="main-logo">
+            <img src="{{ url_for('static', filename='UC_logo.png') }}" alt="Logo" class="uc-logo">
+            <img src="{{ url_for('static', filename='PSITS_LOGO.png') }}" alt="Logo" class="psits-logo">
+        </div>
+        <a href="/admin_dashboard" class="admin-logout">Back to Dashboard</a>
+    </div>   
+    <div class="admin-container">
+        <h2>Reservations</h2>
+        <div class="table-container">
+            <table id="reservationTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Lab</th>
+                        <th>Purpose</th>
+                        <th>Reservation Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reservation in reservations %}
+                    <tr>
+                        <td>{{ reservation.id }}</td>
+                        <td>{{ reservation.firstname }} {{ reservation.lastname }}</td>
+                        <td>{{ reservation.lab }}</td>
+                        <td>{{ reservation.purpose }}</td>
+                        <td>{{ reservation.date }} {{ reservation.time }}</td>
+                        <td>{{ reservation.status }}</td>
+                        <td>
+                        <div class="actions">
+                            {% if reservation.status == "Pending" %}
+                            <button class="accept-btn" onclick="acceptReservation('{{ reservation.id }}')">Accept</button>
+                            <button class="decline-btn" onclick="declineReservation('{{ reservation.id }}')">Decline</button>
+                            {% else %}
+                            <span>{{ reservation.status }}</span>
+                            {% endif %}
+                        </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        function acceptReservation(reservationId) {
+    if (confirm("Are you sure you want to accept this reservation?")) {
+        fetch(`/accept_reservation/${reservationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken() // Add CSRF token
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Reservation accepted.");
+                location.reload();
+            } else {
+                alert("Error: " + (data.error || "Failed to accept reservation."));
+            }
+        })
+        .catch(error => {
+            alert("Network error. Please try again.");
+        });
+    }
+}
+
+function getCsrfToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrf_token='))
+        ?.split('=')[1];
+}
+
+
+        function declineReservation(reservationId) {
+            if (confirm("Are you sure you want to decline this reservation?")) {
+                fetch(`/decline_reservation/${reservationId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Reservation declined.");
+                        location.reload();
+                    } else {
+                        alert("Error: " + (data.error || "Failed to decline reservation."));
+                    }
+                })
+                .catch(error => {
+                    alert("Network error. Please try again.");
+                });
+            }
+        }
+    </script>
+</body>
+</html>
