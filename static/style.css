@@ -217,7 +217,7 @@ tr:hover {
 /* Reservation Styles */
 .reservation-container {
     width: 500px;
-    height: 87%;
+    height: 65%;
     margin: auto;
     padding: 20px;
     border: 1px solid #ccc;
@@ -658,7 +658,7 @@ body {
     border-radius: 5px;
     font-size: medium;
     position: relative;
-    left: 33%;
+    left: 39%;
 }
 
 .reports:hover {
@@ -989,7 +989,7 @@ th {
     border-radius: 5px;
     font-size: medium;
     position: relative;
-    left: 6%;
+    left: 8%;
 }
 
 .edit-announcement-container {
@@ -1092,7 +1092,7 @@ th {
     border-radius: 5px;
     font-size: medium;
     position: relative;
-    left: 12%;
+    left: 16%;
 }
 
 .reservation-header {
@@ -1103,7 +1103,7 @@ th {
     border-radius: 5px;
     font-size: medium;
     position: relative;
-    left: 12%;
+    left: 18%;
 }
 
 /* static/style.css */

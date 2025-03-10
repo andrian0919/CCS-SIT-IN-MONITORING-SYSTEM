@@ -50,6 +50,7 @@ class User(db.Model):
     course = db.Column(db.String(50), nullable=True) 
     yearlevel = db.Column(db.String(20), nullable=True) 
     role = db.Column(db.String(20), nullable=False, default="student")
+    date_registered = db.Column(db.DateTime, default=datetime.utcnow) 
 
 
 # Define the Sessions model
@@ -71,6 +72,7 @@ class Reservation(db.Model):
     lab = db.Column(db.String(50), nullable=False)
     available_pc = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(50), default="Pending")
+    time_out = db.Column(db.String(20))
 
     student = db.relationship("User", backref="reservations")
 
@@ -204,6 +206,52 @@ def admin_dashboard():
         .all()
     )
 
+        # Fetch all students
+    all_students = (
+        db.session.query(
+            User.student_id,
+            User.firstname,
+            User.lastname,
+            User.yearlevel,
+            User.course,
+            User.date_registered
+        )
+        .all()
+    )
+
+        # Fetch current sit-ins
+    current_sit_ins = (
+        db.session.query(
+            Reservation.id,
+            User.student_id,
+            User.firstname,
+            User.lastname,
+            Reservation.purpose,
+            Reservation.lab,
+            Reservation.time
+        )
+        .join(User, User.student_id == Reservation.student_id)
+        .filter(Reservation.status == "Sit-in")
+        .all()
+    )
+
+        # Fetch sit-in records
+    sit_in_records = (
+        db.session.query(
+            Reservation.id,
+            User.student_id,
+            User.firstname,
+            User.lastname,
+            Reservation.purpose,
+            Reservation.lab,
+            Reservation.time,
+            Reservation.date
+        )
+        .join(User, User.student_id == Reservation.student_id)
+        .filter(Reservation.status == "Ended")
+        .all()
+    )
+
      # Fetch pending reservations
     pending_reservations = (
         db.session.query(
@@ -234,6 +282,9 @@ def admin_dashboard():
 
     return render_template(
         "admin_dashboard.html",
+        all_students=all_students,
+        current_sit_ins=current_sit_ins,
+        sit_in_records=sit_in_records,
         active_sessions=active_sessions,
         report_data=report_data,
         feedbacks=feedbacks  # Pass feedback data to the template
@@ -746,6 +797,22 @@ def reservation_actions():
 def add_csrf_cookie(response):
     response.set_cookie("csrf_token", generate_csrf())
     return response
+
+@app.route("/end_sit_in/<int:sit_in_id>", methods=["POST"])
+def end_sit_in(sit_in_id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    reservation = Reservation.query.get(sit_in_id)
+    if not reservation:
+        return jsonify({"success": False, "error": "Sit-in session not found"}), 404
+
+    # Update the status to "Ended" and set the time-out
+    reservation.status = "Ended"
+    reservation.time_out = datetime.now().strftime("%H:%M")
+    db.session.commit()
+
+    return jsonify({"success": True})
 
 
 @app.route("/logout")

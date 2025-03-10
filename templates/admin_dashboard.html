@@ -75,6 +75,15 @@
         justify-content: flex-end; /* Align buttons to the right */
         margin-top: 5px; /* Space above the buttons */
     }
+    .dropdown {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+        width: 200px;
+        position: relative;
+        left: 470px;
+    }
     </style>
 </head>
 <body>
@@ -117,40 +126,146 @@
                 <path d="M 21 3 C 11.601563 3 4 10.601563 4 20 C 4 29.398438 11.601563 37 21 37 C 24.355469 37 27.460938 36.015625 30.09375 34.34375 L 42.375 46.625 L 46.625 42.375 L 34.5 30.28125 C 36.679688 27.421875 38 23.878906 38 20 C 38 10.601563 30.398438 3 21 3 Z M 21 7 C 28.199219 7 34 12.800781 34 20 C 34 27.199219 28.199219 33 21 33 C 13.800781 33 8 27.199219 8 20 C 8 12.800781 13.800781 7 21 7 Z"></path>
                 </svg></span>               
         </div>
-
-        <div class="table-container">
-            <table id="studentTable">
-                <thead>
-                    <tr>
-                        <th>Student ID</th>
-                        <th>Name</th>
-                        <th>Purpose</th>
-                        <th>Lab</th>
-                        <th>Status</th>
-                        <th>Remaining Sessions</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for session in active_sessions %}
-                    <tr>
-                        <td>{{ session.student_id }}</td>
-                        <td>{{ session.firstname }} {{ session.lastname }}</td>
-                        <td>{{ session.purpose }}</td>
-                        <td>{{ session.lab }}</td>
-                        <td>{{ session.status }}</td>
-                        <td>{{ session.remaining_sessions }}</td>
-                        <td>
-                            <div class="actions">
-                                <button class="session-end-btn" onclick="endSession('{{ session.student_id }}')">End Session</button>
-                                <button class="reset-session-btn" onclick="resetSession('{{ session.student_id }}')">Reset Session</button>
-                                <button class="sit-in-btn" onclick="openSitInModal('{{ session.student_id }}', '{{ session.firstname }}', '{{ session.lastname }}', '{{ session.purpose }}', '{{ session.lab }}', '{{ session.remaining_sessions }}')">Sit-in</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="admin-container">
+            <select id="view-dropdown" class="dropdown" onchange="handleViewChange()">
+                <option value="active_sessions">Active Student Sessions</option>
+                <option value="all_students">All Students</option>
+                <option value="current_sit_in">Current Sit-in</option>
+                <option value="sit_in_record">Current Sit-in Records</option>
+            </select>
+        
+            <!-- Active Student Sessions Table (Default View) -->
+            <div id="active-sessions-view">
+                <div class="table-container">
+                    <table id="studentTable">
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Purpose</th>
+                                <th>Lab</th>
+                                <th>Status</th>
+                                <th>Remaining Sessions</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in active_sessions %}
+                            <tr>
+                                <td>{{ session.student_id }}</td>
+                                <td>{{ session.firstname }} {{ session.lastname }}</td>
+                                <td>{{ session.purpose }}</td>
+                                <td>{{ session.lab }}</td>
+                                <td>{{ session.status }}</td>
+                                <td>{{ session.remaining_sessions }}</td>
+                                <td>
+                                    <div class="actions">
+                                        <button class="session-end-btn" onclick="endSession('{{ session.student_id }}')">End Session</button>
+                                        <button class="reset-session-btn" onclick="resetSession('{{ session.student_id }}')">Reset Session</button>
+                                        <button class="sit-in-btn" onclick="openSitInModal('{{ session.student_id }}', '{{ session.firstname }}', '{{ session.lastname }}', '{{ session.purpose }}', '{{ session.lab }}', '{{ session.remaining_sessions }}')">Sit-in</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        
+            <!-- All Students Table -->
+            <div id="all-students-view" style="display: none;">
+                <h2>All Students</h2>
+                <div class="table-container">
+                    <table id="allStudentsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Level</th>
+                                <th>Course</th>
+                                <th>Date Registered</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in all_students %}
+                            <tr>
+                                <td>{{ student.student_id }}</td>
+                                <td>{{ student.firstname }} {{ student.lastname }}</td>
+                                <td>{{ student.yearlevel }}</td>
+                                <td>{{ student.course }}</td>
+                                <td>{{ student.date_registered }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        
+            <!-- Current Sit-in Table -->
+            <div id="current-sit-in-view" style="display: none;">
+                <h2>Current Sit-in</h2>
+                <div class="table-container">
+                    <table id="currentSitInTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Purpose</th>
+                                <th>Lab</th>
+                                <th>Time-in</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sit_in in current_sit_ins %}
+                            <tr>
+                                <td>{{ sit_in.student_id }}</td>
+                                <td>{{ sit_in.firstname }} {{ sit_in.lastname }}</td>
+                                <td>{{ sit_in.purpose }}</td>
+                                <td>{{ sit_in.lab }}</td>
+                                <td>{{ sit_in.time_in }}</td>
+                                <td>
+                                    <button class="end-session-btn" onclick="endSitInSession('{{ sit_in.id }}')">End Session</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        
+            <!-- Current Sit-in Records Table -->
+            <div id="sit-in-records-view" style="display: none;">
+                <h2>Current Sit-in Records</h2>
+                <div class="table-container">
+                    <table id="sitInRecordsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Purpose</th>
+                                <th>Lab</th>
+                                <th>Time-in</th>
+                                <th>Time-out</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in sit_in_records %}
+                            <tr>
+                                <td>{{ record.student_id }}</td>
+                                <td>{{ record.firstname }} {{ record.lastname }}</td>
+                                <td>{{ record.purpose }}</td>
+                                <td>{{ record.lab }}</td>
+                                <td>{{ record.time_in }}</td>
+                                <td>{{ record.time_out }}</td>
+                                <td>{{ record.date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <div class="pagination">
@@ -360,6 +475,44 @@
                 })
                 .catch(error => console.error("Error generating report:", error));
         }
+
+        function handleViewChange() {
+    var selectedView = document.getElementById("view-dropdown").value;
+    document.getElementById("active-sessions-view").style.display = "none";
+    document.getElementById("all-students-view").style.display = "none";
+    document.getElementById("current-sit-in-view").style.display = "none";
+    document.getElementById("sit-in-records-view").style.display = "none";
+
+    if (selectedView === "active_sessions") {
+        document.getElementById("active-sessions-view").style.display = "block";
+    } else if (selectedView === "all_students") {
+        document.getElementById("all-students-view").style.display = "block";
+    } else if (selectedView === "current_sit_in") {
+        document.getElementById("current-sit-in-view").style.display = "block";
+    } else if (selectedView === "sit_in_record") {
+        document.getElementById("sit-in-records-view").style.display = "block";
+    }
+}
+
+    function endSitInSession(sitInId) {
+        if (confirm("Are you sure you want to end this sit-in session?")) {
+            fetch(`/end_sit_in/${sitInId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Sit-in session ended.");
+                    location.reload();
+                } else {
+                    alert("Error: " + (data.error || "Failed to end sit-in session."));
+                }
+            })
+            .catch(error => {
+                alert("Network error. Please try again.");
+            });
+        }
+    }
     </script>
 </body>
 </html>
