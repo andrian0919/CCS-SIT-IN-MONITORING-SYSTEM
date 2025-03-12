@@ -72,7 +72,8 @@ class Reservation(db.Model):
     lab = db.Column(db.String(50), nullable=False)
     available_pc = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(50), default="Pending")
-    time_out = db.Column(db.String(20))
+    time_in = db.Column(db.String(20), nullable=True)
+    time_out = db.Column(db.String(20), nullable=True)
 
     student = db.relationship("User", backref="reservations")
 
@@ -214,8 +215,10 @@ def admin_dashboard():
             User.lastname,
             User.yearlevel,
             User.course,
+            SessionRecord.remaining_sessions,
             User.date_registered
         )
+        .outerjoin(SessionRecord, User.id == SessionRecord.user_id)
         .all()
     )
 
@@ -228,7 +231,7 @@ def admin_dashboard():
             User.lastname,
             Reservation.purpose,
             Reservation.lab,
-            Reservation.time
+            Reservation.time_in
         )
         .join(User, User.student_id == Reservation.student_id)
         .filter(Reservation.status == "Sit-in")
@@ -244,7 +247,8 @@ def admin_dashboard():
             User.lastname,
             Reservation.purpose,
             Reservation.lab,
-            Reservation.time,
+            Reservation.time_in,
+            Reservation.time_out,
             Reservation.date
         )
         .join(User, User.student_id == Reservation.student_id)
@@ -738,6 +742,7 @@ def sit_in(student_id):
     latest_reservation = Reservation.query.filter_by(student_id=student_id).order_by(Reservation.id.desc()).first()
     if latest_reservation:
         latest_reservation.status = "Sit-in"
+        latest_reservation.time_in = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Set time_in
         db.session.commit()
 
     return jsonify({"success": True, "remaining_sessions": session_record.remaining_sessions})
@@ -798,6 +803,9 @@ def add_csrf_cookie(response):
     response.set_cookie("csrf_token", generate_csrf())
     return response
 
+from datetime import datetime
+from flask import session, jsonify
+
 @app.route("/end_sit_in/<int:sit_in_id>", methods=["POST"])
 def end_sit_in(sit_in_id):
     if "user_id" not in session or session.get("role") != "admin":
@@ -809,10 +817,11 @@ def end_sit_in(sit_in_id):
 
     # Update the status to "Ended" and set the time-out
     reservation.status = "Ended"
-    reservation.time_out = datetime.now().strftime("%H:%M")
+    reservation.time_out = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     db.session.commit()
 
     return jsonify({"success": True})
+
 
 
 @app.route("/logout")

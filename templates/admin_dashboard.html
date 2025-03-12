@@ -83,6 +83,8 @@
         width: 200px;
         position: relative;
         left: 470px;
+        top: 1%;
+        bottom: 80px;
     }
     </style>
 </head>
@@ -117,7 +119,6 @@
     </div>
 
     <div class="admin-container">
-        <h2>Active Student Sessions</h2>
 
         <div class="search-container">
             <input type="text" id="searchInput" placeholder="Search by Student ID" onkeyup="searchTable()">
@@ -136,6 +137,7 @@
         
             <!-- Active Student Sessions Table (Default View) -->
             <div id="active-sessions-view">
+                <h2>Active Student Sessions</h2>
                 <div class="table-container">
                     <table id="studentTable">
                         <thead>
@@ -160,7 +162,6 @@
                                 <td>{{ session.remaining_sessions }}</td>
                                 <td>
                                     <div class="actions">
-                                        <button class="session-end-btn" onclick="endSession('{{ session.student_id }}')">End Session</button>
                                         <button class="reset-session-btn" onclick="resetSession('{{ session.student_id }}')">Reset Session</button>
                                         <button class="sit-in-btn" onclick="openSitInModal('{{ session.student_id }}', '{{ session.firstname }}', '{{ session.lastname }}', '{{ session.purpose }}', '{{ session.lab }}', '{{ session.remaining_sessions }}')">Sit-in</button>
                                     </div>
@@ -183,6 +184,7 @@
                                 <th>Full Name</th>
                                 <th>Level</th>
                                 <th>Course</th>
+                                <th>Remaining Sessions</th>
                                 <th>Date Registered</th>
                             </tr>
                         </thead>
@@ -193,6 +195,7 @@
                                 <td>{{ student.firstname }} {{ student.lastname }}</td>
                                 <td>{{ student.yearlevel }}</td>
                                 <td>{{ student.course }}</td>
+                                <td>{{ student.remaining_sessions}}</td>
                                 <td>{{ student.date_registered }}</td>
                             </tr>
                             {% endfor %}
