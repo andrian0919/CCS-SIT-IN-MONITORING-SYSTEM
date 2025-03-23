@@ -20,7 +20,7 @@
                     pcDropdown.innerHTML = "<option value=''>Select a PC</option>";
                     data.forEach(pc => {
                         const option = document.createElement("option");
-                        option.value = pc.id;
+                        option.value = pc.pc_name;
                         option.textContent = pc.pc_name;
                         pcDropdown.appendChild(option);
                     });
@@ -50,7 +50,15 @@
 
             <div class="form-group">
                 <label for="purpose">Purpose:</label>
-                <input type="text" id="purpose" name="purpose" required>
+                <select id="purpose" name="purpose" required>
+                    <option value="">Select a programming language</option>
+                    <option value="C#">C#</option>
+                    <option value="Java">Java</option>
+                    <option value="C">C</option>
+                    <option value="C++">C++</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="PHP">PHP</option>
+                </select>
             </div>
 
             <div class="form-group">
@@ -65,7 +73,10 @@
 
             <div class="form-group">
                 <label for="available_pc">PC to Use:</label>
-                <input type="text" id="available_pc" name="available_pc" placeholder="Enter PC number" required>
+                <select id="available_pc" name="available_pc" required>
+                    <option value="">Select a PC</option>
+                    <!-- Options will be loaded by JavaScript -->
+                </select>
             </div>
 
             <div class="form-group">

@@ -14,6 +14,13 @@ from reports import generate_purpose_report, generate_year_level_report
 from database import db
 from sqlalchemy import text
 from flask_wtf.csrf import generate_csrf
+import threading
+import time
+import io
+import csv
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
 
 app = Flask(__name__)
@@ -28,7 +35,7 @@ app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
 app.config['MAIL_PASSWORD'] = 'your-email-password'
 mail = Mail(app)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root@localhost/SitInMonitoring"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://localhost\\SQLEXPRESS01/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize the database with the app
@@ -127,6 +134,35 @@ with app.app_context():
 
     db.session.commit()
 
+    # Add labs if they don't exist
+    labs = ["524", "544", "523", "526", "Mac lab"]
+    for lab_name in labs:
+        existing_lab = Lab.query.filter_by(lab_name=lab_name).first()
+        if not existing_lab:
+            new_lab = Lab(lab_name=lab_name)
+            db.session.add(new_lab)
+            print(f"Added lab: {lab_name}")
+
+    db.session.commit()
+    
+    # Add PCs for each lab
+    labs_from_db = Lab.query.all()
+    for lab in labs_from_db:
+        # Check if this lab already has PCs
+        existing_pcs = PC.query.filter_by(lab_id=lab.id).count()
+        if existing_pcs == 0:
+            # Number of PCs based on lab
+            pc_count = 50  # Updated to 50 for all labs
+            
+            # Add PCs for each lab
+            for i in range(1, pc_count + 1):
+                pc_name = f"PC-{i}"
+                new_pc = PC(lab_id=lab.id, pc_name=pc_name, is_available=True)
+                db.session.add(new_pc)
+                print(f"Added PC: {pc_name} to {lab.lab_name}")
+    
+    db.session.commit()
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -190,6 +226,15 @@ def admin_dashboard():
         flash("Access denied!", "error")
         return redirect(url_for("home"))
 
+    # Get total number of registered students
+    total_students = User.query.filter_by(role="student").count()
+
+    # Get number of current sit-ins
+    current_sit_in_count = Reservation.query.filter_by(status="Sit-in").count()
+
+    # Get total number of completed sit-ins
+    total_sit_ins = Reservation.query.filter_by(status="Ended").count()
+
     # Fetch active sessions with Purpose, Lab, and Status
     active_sessions = (
         db.session.query(
@@ -207,7 +252,7 @@ def admin_dashboard():
         .all()
     )
 
-        # Fetch all students
+    # Fetch all students
     all_students = (
         db.session.query(
             User.student_id,
@@ -219,10 +264,11 @@ def admin_dashboard():
             User.date_registered
         )
         .outerjoin(SessionRecord, User.id == SessionRecord.user_id)
+        .filter(User.role == "student")  # Only include student users, not admin or staff
         .all()
     )
 
-        # Fetch current sit-ins
+    # Fetch current sit-ins
     current_sit_ins = (
         db.session.query(
             Reservation.id,
@@ -231,14 +277,18 @@ def admin_dashboard():
             User.lastname,
             Reservation.purpose,
             Reservation.lab,
-            Reservation.time_in
+            Reservation.time_in,
+            Reservation.status,
+            SessionRecord.remaining_sessions
         )
         .join(User, User.student_id == Reservation.student_id)
+        .join(SessionRecord, User.id == SessionRecord.user_id)
         .filter(Reservation.status == "Sit-in")
         .all()
     )
 
-        # Fetch sit-in records
+    # Fetch sit-in records for the current day only
+    current_date = datetime.now().strftime("%Y-%m-%d")
     sit_in_records = (
         db.session.query(
             Reservation.id,
@@ -253,10 +303,11 @@ def admin_dashboard():
         )
         .join(User, User.student_id == Reservation.student_id)
         .filter(Reservation.status == "Ended")
+        .filter(Reservation.date == current_date)  # Only show today's records
         .all()
     )
 
-     # Fetch pending reservations
+    # Fetch pending reservations
     pending_reservations = (
         db.session.query(
             Reservation.id,
@@ -272,6 +323,34 @@ def admin_dashboard():
         .filter(Reservation.status == "Pending")  # Only show pending reservations
         .all()
     )
+
+    # Calculate Purpose statistics for chart
+    purpose_stats = (
+        db.session.query(
+            Reservation.purpose,
+            func.count(Reservation.id).label("count")
+        )
+        .filter(Reservation.status.in_(["Ended", "Sit-in"]))  # Only show non-archived completed sessions
+        .group_by(Reservation.purpose)
+        .all()
+    )
+    
+    # Format purpose stats for JSON
+    purpose_stats_list = [{"purpose": p.purpose, "count": p.count} for p in purpose_stats]
+    
+    # Calculate Lab statistics for chart
+    lab_stats = (
+        db.session.query(
+            Reservation.lab,
+            func.count(Reservation.id).label("count")
+        )
+        .filter(Reservation.status.in_(["Ended", "Sit-in"]))  # Only show non-archived completed sessions
+        .group_by(Reservation.lab)
+        .all()
+    )
+    
+    # Format lab stats for JSON
+    lab_stats_list = [{"lab": l.lab, "count": l.count} for l in lab_stats]
 
     # Fetch report data
     report_data = (
@@ -291,7 +370,12 @@ def admin_dashboard():
         sit_in_records=sit_in_records,
         active_sessions=active_sessions,
         report_data=report_data,
-        feedbacks=feedbacks  # Pass feedback data to the template
+        feedbacks=feedbacks,  # Pass feedback data to the template
+        purpose_stats=purpose_stats_list,  # Pass purpose statistics data
+        lab_stats=lab_stats_list,  # Pass lab statistics data
+        total_students=total_students,
+        current_sit_in_count=current_sit_in_count,
+        total_sit_ins=total_sit_ins
     )
 
 @app.route('/download_report/<report_type>')
@@ -536,20 +620,22 @@ def make_reservation():
         time = request.form.get("time")
         purpose = request.form.get("purpose")
         lab_id = request.form.get("lab")
-        pc_input = request.form.get("available_pc")
+        pc_name = request.form.get("available_pc")  # Now getting PC name from dropdown
 
         lab = Lab.query.get(lab_id)
         if not lab:
             flash("Invalid laboratory selection!", "error")
             return redirect(url_for("make_reservation"))
 
-        if not pc_input:
-            flash("Please enter a valid PC number.", "error")
+        if not pc_name:
+            flash("Please select a PC.", "error")
             return redirect(url_for("make_reservation"))
 
-        # Debugging: Print collected data
-        print(f"Saving reservation: {user.student_id}, {user.lastname}, {user.firstname}, {date}, {time}, {purpose}, {lab.lab_name}, {pc_input}")
-
+        # Mark the PC as unavailable
+        pc = PC.query.filter_by(lab_id=lab.id, pc_name=pc_name).first()
+        if pc:
+            pc.is_available = False
+            
         # Save reservation
         new_reservation = Reservation(
             student_id=user.student_id,
@@ -559,7 +645,7 @@ def make_reservation():
             time=time,
             purpose=purpose,
             lab=lab.lab_name,
-            available_pc=pc_input,
+            available_pc=pc_name,
             status="Pending"  # Default status
         )
         
@@ -722,28 +808,105 @@ def reset_session(student_id):
 
     return jsonify({"success": True, "remaining_sessions": session_record.remaining_sessions})
 
+@app.route("/reset_all_sessions", methods=["POST"])
+def reset_all_sessions():
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    try:
+        # Get all student users and their session records
+        students = User.query.filter_by(role="student").all()
+        
+        for student in students:
+            session_record = SessionRecord.query.filter_by(user_id=student.id).first()
+            if session_record:
+                # Reset based on course
+                if student.course in ["BSIT", "BSCS"]:
+                    session_record.remaining_sessions = 30
+                else:
+                    session_record.remaining_sessions = 15
+
+        db.session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route("/sit_in/<student_id>", methods=["POST"])
 def sit_in(student_id):
     if "user_id" not in session or session.get("role") != "admin":
         return jsonify({"success": False, "error": "Unauthorized"}), 403
 
-    user = User.query.filter_by(student_id=student_id).first()
+    try:
+        # Get the request data
+        data = request.get_json()
+        purpose = data.get('purpose')
+        lab = data.get('lab')
+
+        user = User.query.filter_by(student_id=student_id).first()
+        if not user:
+            return jsonify({"success": False, "error": "Student not found"}), 404
+
+        session_record = SessionRecord.query.filter_by(user_id=user.id).first()
+        if not session_record or session_record.remaining_sessions <= 0:
+            return jsonify({"success": False, "error": "No remaining sessions"}), 400
+
+        # Check if student has an approved reservation
+        reservation = Reservation.query.filter_by(student_id=student_id, status="Approved").first()
+        
+        if reservation:
+            # Use the reservation's purpose and lab
+            reservation.status = "Sit-in"
+            reservation.time_in = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            # Create a new sit-in record
+            new_reservation = Reservation(
+                student_id=student_id,
+                firstname=user.firstname,
+                lastname=user.lastname,
+                purpose=purpose,
+                lab=lab,
+                status="Sit-in",
+                time_in=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                date=datetime.now().strftime("%Y-%m-%d"),
+                time=datetime.now().strftime("%H:%M:%S"),
+                available_pc="Not Assigned"  # Add default value for available_pc
+            )
+            db.session.add(new_reservation)
+
+        db.session.commit()
+        return jsonify({"success": True, "remaining_sessions": session_record.remaining_sessions})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/end_sit_in/<int:sit_in_id>", methods=["POST"])
+def end_sit_in(sit_in_id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    reservation = Reservation.query.get(sit_in_id)
+    if not reservation:
+        return jsonify({"success": False, "error": "Sit-in session not found"}), 404
+
+    # Get the user and their session record
+    user = User.query.filter_by(student_id=reservation.student_id).first()
     if not user:
         return jsonify({"success": False, "error": "Student not found"}), 404
 
     session_record = SessionRecord.query.filter_by(user_id=user.id).first()
-    if not session_record or session_record.remaining_sessions <= 0:
-        return jsonify({"success": False, "error": "No remaining sessions"}), 400
+    if not session_record:
+        return jsonify({"success": False, "error": "Session record not found"}), 404
 
-    # Deduct one session
-    session_record.remaining_sessions -= 1
+    # Deduct one session when ending the sit-in
+    if session_record.remaining_sessions > 0:
+        session_record.remaining_sessions -= 1
 
-    # Mark the student as "Sit-in" in their latest reservation
-    latest_reservation = Reservation.query.filter_by(student_id=student_id).order_by(Reservation.id.desc()).first()
-    if latest_reservation:
-        latest_reservation.status = "Sit-in"
-        latest_reservation.time_in = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Set time_in
-        db.session.commit()
+    # Update the status to "Ended" and set the time-out
+    reservation.status = "Ended"
+    reservation.time_out = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    db.session.commit()
 
     return jsonify({"success": True, "remaining_sessions": session_record.remaining_sessions})
 
@@ -806,23 +969,34 @@ def add_csrf_cookie(response):
 from datetime import datetime
 from flask import session, jsonify
 
-@app.route("/end_sit_in/<int:sit_in_id>", methods=["POST"])
-def end_sit_in(sit_in_id):
+@app.route("/sit_in_reports")
+def sit_in_reports():
     if "user_id" not in session or session.get("role") != "admin":
-        return jsonify({"success": False, "error": "Unauthorized"}), 403
+        flash("Access denied!", "error")
+        return redirect(url_for("home"))
 
-    reservation = Reservation.query.get(sit_in_id)
-    if not reservation:
-        return jsonify({"success": False, "error": "Sit-in session not found"}), 404
+    # Fetch all sit-in records that have ended (historical data)
+    sit_in_records = (
+        db.session.query(
+            Reservation.id,
+            User.student_id,
+            User.firstname,
+            User.lastname,
+            Reservation.purpose,
+            Reservation.lab,
+            Reservation.time_in,
+            Reservation.time_out,
+            Reservation.date
+        )
+        .join(User, User.student_id == Reservation.student_id)
+        .filter(Reservation.status == "Ended")
+        .all()
+    )
 
-    # Update the status to "Ended" and set the time-out
-    reservation.status = "Ended"
-    reservation.time_out = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    db.session.commit()
-
-    return jsonify({"success": True})
-
-
+    return render_template(
+        "sit_in_reports.html",
+        sit_in_records=sit_in_records
+    )
 
 @app.route("/logout")
 def logout():
@@ -830,6 +1004,125 @@ def logout():
     flash("Logged out successfully!", "success")
     return redirect(url_for("home"))
 
+@app.route("/export_report", methods=["POST"])
+def export_report():
+    if "user_id" not in session or session.get("role") != "admin":
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
 
+    # Get data and format from the request
+    data = request.json
+    export_format = data.get("format")
+    report_data = data.get("data")
+    
+    if not report_data or not export_format:
+        return jsonify({"success": False, "error": "Missing data or format"}), 400
+    
+    # Create a DataFrame from the data
+    df = pd.DataFrame(report_data["rows"])
+    
+    # Create a buffer to store the file
+    buffer = io.BytesIO()
+    
+    # Export to the selected format
+    if export_format == "csv":
+        # Convert DataFrame to CSV
+        df.to_csv(buffer, index=False)
+        buffer.seek(0)
+        mimetype = "text/csv"
+        filename = "sit_in_report.csv"
+    
+    elif export_format == "excel":
+        # Convert DataFrame to Excel
+        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+            df.to_excel(writer, index=False, sheet_name="Sit-in Records")
+            # Auto-adjust columns' width
+            worksheet = writer.sheets["Sit-in Records"]
+            for i, col in enumerate(df.columns):
+                column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+                worksheet.set_column(i, i, column_width)
+        buffer.seek(0)
+        mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        filename = "sit_in_report.xlsx"
+    
+    elif export_format == "pdf":
+        # Create a PDF using ReportLab
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(letter))
+        elements = []
+        
+        # Convert DataFrame to a list of lists for the table
+        data_list = [df.columns.tolist()] + df.values.tolist()
+        
+        # Create the table
+        table = Table(data_list)
+        
+        # Style the table
+        style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ])
+        
+        table.setStyle(style)
+        elements.append(table)
+        
+        # Build the PDF
+        doc.build(elements)
+        buffer.seek(0)
+        mimetype = "application/pdf"
+        filename = "sit_in_report.pdf"
+    
+    else:
+        return jsonify({"success": False, "error": "Invalid format"}), 400
+    
+    # Return the file as a response
+    return send_file(
+        buffer,
+        mimetype=mimetype,
+        as_attachment=True,
+        download_name=filename
+    )
+
+# Function to update the sit-in records at 9:30 PM
+def archive_sit_in_records():
+    with app.app_context():
+        while True:
+            now = datetime.now()
+            
+            # Check if it's 9:30 PM
+            if now.hour == 21 and now.minute == 30:
+                print("Running scheduled task: Archiving sit-in records and resetting statistics...")
+                
+                # Get all active sit-in sessions
+                active_sit_ins = Reservation.query.filter_by(status="Sit-in").all()
+                
+                # Update their status to "Ended" if they don't have a time_out
+                for sit_in in active_sit_ins:
+                    if not sit_in.time_out:
+                        sit_in.status = "Ended"
+                        sit_in.time_out = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                
+                # Reset Usage Statistics by updating all reservations to "Archived" status
+                all_reservations = Reservation.query.filter_by(status="Ended").all()
+                for reservation in all_reservations:
+                    reservation.status = "Archived"
+                
+                db.session.commit()
+                print(f"Archived {len(active_sit_ins)} sit-in records and reset statistics")
+                
+                # Wait until the next minute to avoid running the task multiple times
+                time.sleep(60)
+            else:
+                # Check every minute
+                time.sleep(60)
+
+# Start the background thread for scheduled tasks
 if __name__ == "__main__":
+    # Create a daemon thread to run the scheduled task
+    scheduler_thread = threading.Thread(target=archive_sit_in_records, daemon=True)
+    scheduler_thread.start()
+    
     app.run(debug=True)

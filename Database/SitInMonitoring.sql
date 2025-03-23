@@ -2,87 +2,92 @@ CREATE DATABASE SitInMonitoring;
 
 USE SitInMonitoring;
 
+-- Users Table
 CREATE TABLE Users (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    student_id VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    lastname VARCHAR(50) NOT NULL,
-    firstname VARCHAR(50) NOT NULL,
-    middlename VARCHAR(50) NULL,
-    course VARCHAR(50) NOT NULL,
-    yearlevel VARCHAR(20) NOT NULL,
-    role VARCHAR(20) NOT NULL DEFAULT 'student'
+    student_id NVARCHAR(50) UNIQUE NOT NULL,
+    password NVARCHAR(255) NOT NULL,
+    email NVARCHAR(100) UNIQUE NOT NULL,
+    lastname NVARCHAR(50) NOT NULL,
+    firstname NVARCHAR(50) NOT NULL,
+    middlename NVARCHAR(50),
+    course NVARCHAR(50),
+    yearlevel NVARCHAR(20),
+    role NVARCHAR(20) NOT NULL DEFAULT 'student',
+    date_registered DATETIME DEFAULT GETDATE()
 );
 
+-- Sessions Table
 CREATE TABLE Sessions (
     id INT IDENTITY(1,1) PRIMARY KEY,
     user_id INT NOT NULL,
-    remaining_sessions INT NOT NULL DEFAULT 10,
-    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+    remaining_sessions INT NOT NULL DEFAULT 30,
+    FOREIGN KEY (user_id) REFERENCES Users(id)
 );
 
+-- Reservation Table
 CREATE TABLE Reservation (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    student_id VARCHAR(50) NOT NULL,
-    lastname VARCHAR(50) NOT NULL,
-    firstname VARCHAR(50) NOT NULL,
-    date DATE NOT NULL,
-    time TIME NOT NULL,
-    purpose VARCHAR(100) NOT NULL,
-    lab VARCHAR(50) NOT NULL,
-    available_pc VARCHAR(50) NOT NULL,
-    FOREIGN KEY (student_id) REFERENCES Users(student_id) ON DELETE CASCADE
+    student_id NVARCHAR(50) NOT NULL,
+    lastname NVARCHAR(50) NOT NULL,
+    firstname NVARCHAR(50) NOT NULL,
+    date NVARCHAR(20) NOT NULL,
+    time NVARCHAR(20) NOT NULL,
+    purpose NVARCHAR(100) NOT NULL,
+    lab NVARCHAR(50) NOT NULL,
+    available_pc NVARCHAR(50) NOT NULL,
+    status NVARCHAR(50) DEFAULT 'Pending',
+    time_in NVARCHAR(20),
+    time_out NVARCHAR(20),
+    FOREIGN KEY (student_id) REFERENCES Users(student_id)
 );
 
-
+-- Labs Table
 CREATE TABLE Labs (
-    id INT PRIMARY KEY IDENTITY(1,1),
+    id INT IDENTITY(1,1) PRIMARY KEY,
     lab_name NVARCHAR(50) NOT NULL
 );
 
+-- PCs Table
 CREATE TABLE PCs (
-    id INT PRIMARY KEY IDENTITY(1,1),
+    id INT IDENTITY(1,1) PRIMARY KEY,
     lab_id INT NOT NULL,
     pc_name NVARCHAR(50) NOT NULL,
-    is_available BIT NOT NULL DEFAULT 1,
+    is_available BIT NOT NULL DEFAULT 1, -- BIT is used for boolean in MSSQL
     FOREIGN KEY (lab_id) REFERENCES Labs(id)
 );
 
+-- Announcements Table
 CREATE TABLE Announcements (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    announcement_text TEXT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT GETDATE()
+    announcement_text NVARCHAR(MAX) NOT NULL, -- NVARCHAR(MAX) for large text
+    created_at DATETIME DEFAULT GETDATE()
 );
 
-CREATE TABLE Feedbacks (
+-- Feedback Table
+CREATE TABLE Feedback (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    student_id VARCHAR(50) NOT NULL,
-    feedback_text TEXT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT GETDATE(),
-    FOREIGN KEY (student_id) REFERENCES Users(student_id) ON DELETE CASCADE
+    student_id NVARCHAR(50) NOT NULL,
+    lab NVARCHAR(50) NOT NULL,
+    feedback_text NVARCHAR(MAX) NOT NULL,
+    created_at DATETIME DEFAULT GETDATE()
 );
 
 
-INSERT INTO Users (student_id, password, email, lastname, firstname, course, yearlevel, role)
-VALUES 
-    ('admin', 'admin123', 'admin@example.com', 'Admin', 'User', 'N/A', 'N/A', 'admin'),
-    ('staff', 'staff123', 'staff@example.com', 'Staff', 'User', 'N/A', 'N/A', 'staff');
+-- Insert sample labs
+INSERT INTO Labs (lab_name) VALUES
+    ('526'),
+    ('Mac Lab'),
+    ('544'),
+    ('523'),
+    ('524');
 
-INSERT INTO PCs (lab_id, pc_name, is_available) 
-VALUES 
-((SELECT id FROM Labs WHERE lab_name = '524'), 'PC 1', 1),
-((SELECT id FROM Labs WHERE lab_name = '524'), 'PC 2', 1),
-((SELECT id FROM Labs WHERE lab_name = '526'), 'PC 3', 1),
-((SELECT id FROM Labs WHERE lab_name = '526'), 'PC 4', 1),
-((SELECT id FROM Labs WHERE lab_name = '530'), 'PC 5', 1),
-((SELECT id FROM Labs WHERE lab_name = '544'), 'PC 6', 1),
-((SELECT id FROM Labs WHERE lab_name = '542'), 'PC 7', 1);
-
-
-
-Select * from Announcements;
-
---# MSSQL Database Connection String
---app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://@LAPTOP-IEKCA1QT\\SQLEXPRESS01/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=yes"
---app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = FalseS
+-- Check if the lab column exists before adding it
+IF NOT EXISTS (
+    SELECT * FROM sys.columns 
+    WHERE object_id = OBJECT_ID(N'[dbo].[Feedback]') 
+    AND name = 'lab'
+)
+BEGIN
+    ALTER TABLE Feedback ADD lab NVARCHAR(50) NOT NULL DEFAULT 'Unknown';
+END

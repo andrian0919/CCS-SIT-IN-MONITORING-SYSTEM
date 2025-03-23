@@ -50,6 +50,14 @@
     </div>
     <div class="feedback-form-container" id="feedbackForm" style="display:none;">
         <form id="feedbackFormContent" onsubmit="submitFeedback(event)">
+            <select id="labSelect" required>
+                <option value="">Select Lab</option>
+                <option value="524">524</option>
+                <option value="544">544</option>
+                <option value="523">523</option>
+                <option value="526">526</option>
+                <option value="Mac lab">Mac lab</option>
+            </select>
             <textarea id="feedbackText" rows="4" cols="50" placeholder="Enter your feedback here..." required></textarea>
             <button type="submit">Submit Feedback</button>
         </form>
@@ -65,21 +73,27 @@
     function submitFeedback(event) {
         event.preventDefault();
         const feedbackText = document.getElementById('feedbackText').value;
-        const studentId = "{{ user.student_id }}"; // Assuming user.student_id is available in the template
+        const lab = document.getElementById('labSelect').value;
+        const studentId = "{{ user.student_id }}";
 
         fetch('/submit_feedback', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ student_id: studentId, feedback_text: feedbackText }),
+            body: JSON.stringify({ 
+                student_id: studentId, 
+                feedback_text: feedbackText,
+                lab: lab 
+            }),
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 alert('Feedback submitted successfully!');
                 document.getElementById('feedbackForm').style.display = 'none';
-                document.getElementById('feedbackText').value = ''; // Clear the textarea
+                document.getElementById('feedbackText').value = '';
+                document.getElementById('labSelect').value = '';
             } else {
                 alert('Error submitting feedback.');
             }
