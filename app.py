@@ -107,6 +107,7 @@ class Feedback(db.Model):
     __tablename__ = "Feedback"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     student_id = db.Column(db.String(50), nullable=False)
+    lab = db.Column(db.String(50), nullable=False)
     feedback_text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
@@ -764,11 +765,27 @@ def submit_feedback():
     data = request.get_json()
     student_id = data.get("student_id")
     feedback_text = data.get("feedback_text")
+    lab = data.get("lab")
+    
+    # If lab is missing or Unknown, try to get it from the student's most recent reservation
+    if not lab or lab == "Unknown":
+        latest_reservation = Reservation.query.filter_by(
+            student_id=student_id
+        ).order_by(Reservation.id.desc()).first()
+        
+        if latest_reservation:
+            lab = latest_reservation.lab
+        else:
+            lab = "Not Specified"
 
     if not student_id or not feedback_text:
         return jsonify({"success": False, "error": "Missing data"}), 400
 
-    new_feedback = Feedback(student_id=student_id, feedback_text=feedback_text)
+    new_feedback = Feedback(
+        student_id=student_id, 
+        feedback_text=feedback_text,
+        lab=lab
+    )
     db.session.add(new_feedback)
     db.session.commit()
 
@@ -780,10 +797,32 @@ def feedback():
         flash("Access denied!", "error")
         return redirect(url_for("home"))
 
-    # Fetch feedback data
-    feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
+    feedbacks_with_users = db.session.query(
+        Feedback.id,
+        Feedback.student_id,
+        Feedback.lab,
+        Feedback.feedback_text,
+        Feedback.created_at,
+        User.firstname,
+        User.lastname
+    ).join(
+        User, 
+        Feedback.student_id == User.student_id
+    ).order_by(Feedback.created_at.desc()).all()
+    
+    formatted_feedbacks = []
+    for f in feedbacks_with_users:
+        formatted_feedbacks.append({
+            'id': f.id,
+            'student_id': f.student_id,
+            'firstname': f.firstname,
+            'lastname': f.lastname,
+            'lab': f.lab,
+            'feedback_text': f.feedback_text,
+            'created_at': f.created_at.strftime('%Y-%m-%d') if f.created_at else ''
+        })
 
-    return render_template("feedback.html", feedbacks=feedbacks)
+    return render_template("feedback.html", feedbacks=formatted_feedbacks)
 
 @app.route("/reset_session/<student_id>", methods=["POST"])
 def reset_session(student_id):
@@ -976,6 +1015,7 @@ def sit_in_reports():
         return redirect(url_for("home"))
 
     # Fetch all sit-in records that have ended (historical data)
+    # Only show "Ended" status, not "Archived" ones - this ensures it resets daily
     sit_in_records = (
         db.session.query(
             Reservation.id,
@@ -989,7 +1029,7 @@ def sit_in_reports():
             Reservation.date
         )
         .join(User, User.student_id == Reservation.student_id)
-        .filter(Reservation.status == "Ended")
+        .filter(Reservation.status == "Ended")  # Only show Ended status, not Archived
         .all()
     )
 
@@ -1106,12 +1146,12 @@ def archive_sit_in_records():
                         sit_in.time_out = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 
                 # Reset Usage Statistics by updating all reservations to "Archived" status
-                all_reservations = Reservation.query.filter_by(status="Ended").all()
-                for reservation in all_reservations:
+                all_ended_reservations = Reservation.query.filter_by(status="Ended").all()
+                for reservation in all_ended_reservations:
                     reservation.status = "Archived"
                 
                 db.session.commit()
-                print(f"Archived {len(active_sit_ins)} sit-in records and reset statistics")
+                print(f"Archived {len(active_sit_ins)} sit-in records and reset all statistics")
                 
                 # Wait until the next minute to avoid running the task multiple times
                 time.sleep(60)
@@ -1126,3 +1166,30 @@ if __name__ == "__main__":
     scheduler_thread.start()
     
     app.run(debug=True)
+
+@app.route("/update_feedback_labs", methods=["GET"])
+def update_feedback_labs():
+    if "user_id" not in session or session.get("role") != "admin":
+        flash("Access denied!", "error")
+        return redirect(url_for("home"))
+        
+    # Get all feedback records with Unknown lab
+    unknown_feedbacks = Feedback.query.filter(
+        (Feedback.lab == "Unknown") | (Feedback.lab == None)
+    ).all()
+    
+    updated_count = 0
+    
+    for feedback in unknown_feedbacks:
+        # Try to find a reservation for this student
+        reservation = Reservation.query.filter_by(
+            student_id=feedback.student_id
+        ).order_by(Reservation.id.desc()).first()
+        
+        if reservation:
+            feedback.lab = reservation.lab
+            updated_count += 1
+    
+    db.session.commit()
+    
+    return f"Updated {updated_count} feedback records with correct lab information."

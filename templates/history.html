@@ -24,7 +24,7 @@
                     <th>Date</th>
                     <th>Time</th>
                     <th>Status</th>
-
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,41 +40,54 @@
                     <td>{{ reservation.date }}</td>
                     <td>{{ reservation.time }}</td>
                     <td>{{ reservation.status }}</td>
+                    <td>
+                        <button onclick="showForm('Feedback', '{{ reservation.id }}', '{{ reservation.lab }}')" class="feedback-btn">Feedback</button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>         
-        </table>
-        <div class="tabs">
-            <p>Do you have concerns? Send <a href="javascript:void(0);" onclick="showForm('Feedback')">feedback.</a></p>
-        </div> 
+        </table> 
     </div>
     <div class="feedback-form-container" id="feedbackForm" style="display:none;">
         <form id="feedbackFormContent" onsubmit="submitFeedback(event)">
-            <select id="labSelect" required>
-                <option value="">Select Lab</option>
-                <option value="524">524</option>
-                <option value="544">544</option>
-                <option value="523">523</option>
-                <option value="526">526</option>
-                <option value="Mac lab">Mac lab</option>
-            </select>
+            <input type="hidden" id="reservationId">
+            <input type="hidden" id="lab">
             <textarea id="feedbackText" rows="4" cols="50" placeholder="Enter your feedback here..." required></textarea>
             <button type="submit">Submit Feedback</button>
+            <button type="button" onclick="hideForm()">Cancel</button>
         </form>
     </div>
 <script>
-    function showForm(formType) {
+    function showForm(formType, reservationId = null, lab = null) {
         if (formType === 'Feedback') {
             const feedbackForm = document.getElementById('feedbackForm');
-            feedbackForm.style.display = feedbackForm.style.display === 'none' ? 'block' : 'none';
+            const reservationIdInput = document.getElementById('reservationId');
+            const labInput = document.getElementById('lab');
+            
+            if (reservationId) {
+                reservationIdInput.value = reservationId;
+                labInput.value = lab;
+            } else {
+                reservationIdInput.value = '';
+                labInput.value = '';
+            }
+            
+            feedbackForm.style.display = 'block';
         }
+    }
+
+    function hideForm() {
+        document.getElementById('feedbackForm').style.display = 'none';
+        document.getElementById('feedbackText').value = '';
+        document.getElementById('reservationId').value = '';
+        document.getElementById('lab').value = '';
     }
 
     function submitFeedback(event) {
         event.preventDefault();
         const feedbackText = document.getElementById('feedbackText').value;
-        const lab = document.getElementById('labSelect').value;
         const studentId = "{{ user.student_id }}";
+        const reservationId = document.getElementById('reservationId').value;
 
         fetch('/submit_feedback', {
             method: 'POST',
@@ -84,16 +97,14 @@
             body: JSON.stringify({ 
                 student_id: studentId, 
                 feedback_text: feedbackText,
-                lab: lab 
+                lab: document.getElementById('lab').value
             }),
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 alert('Feedback submitted successfully!');
-                document.getElementById('feedbackForm').style.display = 'none';
-                document.getElementById('feedbackText').value = '';
-                document.getElementById('labSelect').value = '';
+                hideForm();
             } else {
                 alert('Error submitting feedback.');
             }

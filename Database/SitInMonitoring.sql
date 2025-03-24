@@ -91,3 +91,30 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE Feedback ADD lab NVARCHAR(50) NOT NULL DEFAULT 'Unknown';
 END
+
+Select * From Users;
+Select * From Announcements;
+Select * From Feedback;
+Select * From Labs;
+Select * From Reservation;
+Select * From Sessions;
+Select * From PCs;
+
+UPDATE Feedback f
+SET f.lab = (SELECT r.lab FROM Reservation r 
+             WHERE r.student_id = f.student_id 
+             ORDER BY r.id DESC LIMIT 1)
+WHERE f.lab = 'Unknown' OR f.lab IS NULL;
+
+-- Update existing feedback records with correct lab information
+UPDATE f
+SET f.lab = r.lab
+FROM Feedback f
+JOIN Reservation r ON f.student_id = r.student_id
+WHERE (f.lab = 'Unknown' OR f.lab IS NULL)
+AND r.id = (
+    SELECT TOP 1 id 
+    FROM Reservation 
+    WHERE student_id = f.student_id 
+    ORDER BY id DESC
+);

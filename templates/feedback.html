@@ -121,6 +121,8 @@
                 <tr>
                     <th>ID</th>
                     <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Lab</th>
                     <th>Date</th>
                     <th>Feedback Message</th>
                 </tr>
@@ -130,7 +132,9 @@
                 <tr>
                     <td>{{ feedback.id }}</td>
                     <td>{{ feedback.student_id }}</td>
-                    <td>{{ feedback.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ feedback.firstname }} {{ feedback.lastname }}</td>
+                    <td>{{ feedback.lab }}</td>
+                    <td>{{ feedback.created_at }}</td>
                     <td>{{ feedback.feedback_text }}</td>
                 </tr>
                 {% endfor %}
