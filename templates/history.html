@@ -11,42 +11,44 @@
 
     <div class="history_dashboard-container">
         <h2>Student Sit-in History</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Student ID</th>
-                    <th>Last Name</th>
-                    <th>First Name</th>
-                    <th>Lab</th>
-                    <th>PC</th>
-                    <th>Purpose</th>
-                    <th>Remaining Sessions</th> <!-- New Column -->
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for reservation in reservations %}
-                <tr>
-                    <td>{{ reservation.student_id }}</td>
-                    <td>{{ reservation.lastname }}</td>
-                    <td>{{ reservation.firstname }}</td>
-                    <td>{{ reservation.lab }}</td>
-                    <td>{{ reservation.available_pc }}</td>
-                    <td>{{ reservation.purpose }}</td>
-                    <td>{{ remaining_sessions.get(reservation.student_id, 0) }}</td> <!-- Display Remaining Sessions -->
-                    <td>{{ reservation.date }}</td>
-                    <td>{{ reservation.time }}</td>
-                    <td>{{ reservation.status }}</td>
-                    <td>
-                        <button onclick="showForm('Feedback', '{{ reservation.id }}', '{{ reservation.lab }}')" class="feedback-btn">Feedback</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>         
-        </table> 
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Last Name</th>
+                        <th>First Name</th>
+                        <th>Lab</th>
+                        <th>PC</th>
+                        <th>Purpose</th>
+                        <th>Remaining Sessions</th> <!-- New Column -->
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reservation in reservations %}
+                    <tr>
+                        <td>{{ reservation.student_id }}</td>
+                        <td>{{ reservation.lastname }}</td>
+                        <td>{{ reservation.firstname }}</td>
+                        <td>{{ reservation.lab }}</td>
+                        <td>{{ reservation.available_pc }}</td>
+                        <td>{{ reservation.purpose }}</td>
+                        <td>{{ remaining_sessions.get(reservation.student_id, 0) }}</td> <!-- Display Remaining Sessions -->
+                        <td>{{ reservation.date }}</td>
+                        <td>{{ reservation.time }}</td>
+                        <td>{{ reservation.status }}</td>
+                        <td>
+                            <button onclick="showForm('Feedback', '{{ reservation.id }}', '{{ reservation.lab }}')" class="feedback-btn">Feedback</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>         
+            </table>
+        </div> 
     </div>
     <div class="feedback-form-container" id="feedbackForm" style="display:none;">
         <form id="feedbackFormContent" onsubmit="submitFeedback(event)">

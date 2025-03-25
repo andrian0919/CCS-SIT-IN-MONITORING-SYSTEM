@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Student Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -20,7 +20,7 @@
                     <li>Surfing the Internet is only allowed with instructor permission. Downloading and installing software are strictly prohibited.</li>
                     <li>Accessing websites unrelated to the course (especially illicit or pornographic sites) is strictly prohibited.</li>
                     <li>Deleting files and changing computer settings is a major offense.</li>
-                    <li>Observe computer time usage carefully. A 15-minute allowance is given for each use; otherwise, the unit will be given to those who wish to “sit-in.”</li>
+                    <li>Observe computer time usage carefully. A 15-minute allowance is given for each use; otherwise, the unit will be given to those who wish to "sit-in."</li>
                     <li>Proper decorum must be observed inside the lab:
                         <ul>
                             <li>Do not enter the lab unless the instructor is present.</li>
@@ -44,8 +44,7 @@
                 </ul>
             </div>
         </div>
-    </div>
-    
+        
         <!-- Student Dashboard (Center) -->
         <div class="dashboard-container">
             <p>Welcome, {{ user.firstname }} {{ user.lastname }}!</p>
@@ -58,11 +57,9 @@
                 <p><strong>COURSE:</strong> {{ user.course }}</p>
                 <p><strong>YEAR LEVEL:</strong> {{ user.yearlevel }}</p>
                 <p><strong>REMAINING SESSION:</strong> {{ remaining_sessions }}</p>
-                <center>
-                    <div class="profile-pic">
-                        <img src="{{ profile_pic }}" alt="Profile Picture" class="student-profile">
-                    </div>
-                </center>                
+                <div class="profile-pic">
+                    <img src="{{ profile_pic }}" alt="Profile Picture" class="student-profile">
+                </div>                
             </div>
             {% endif %}
         </div>

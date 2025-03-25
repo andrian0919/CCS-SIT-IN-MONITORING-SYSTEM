@@ -12,6 +12,10 @@ body {
     margin: 0;
 }
 
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
 /* Container */
 .container {
     width: 30%;
@@ -187,9 +191,9 @@ select {
     text-align: center;
     width: 60%;
     margin: auto;
-
 }
 
+/* General table styles */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -212,6 +216,32 @@ tr:nth-child(even) {
 
 tr:hover {
     background-color: #ddd;
+}
+
+/* History dashboard specific table styles */
+.history_dashboard-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.history_dashboard-container th, 
+.history_dashboard-container td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.history_dashboard-container th {
+    background-color: #333;
+    color: white;
+    font-weight: bold;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
 }
 
 /* Reservation Styles */
@@ -271,10 +301,12 @@ tr:hover {
 .student-info {
     text-align: left;
     margin-bottom: 20px;
+    padding-right: 140px; /* Create space for the profile picture */
 }
 
 .student-info p {
     font-size: 18px;
+    margin: 10px 0;
 }
 
 /* Actions Section */
@@ -455,14 +487,19 @@ tr:hover {
     top: 0;
     width: 100%;
     height: 5%;
-    display: inline-flex;
+    display: flex;
     justify-content: space-between;
     align-items: center;
     background-color: blue;
     padding: 15px 30px;
     color: white;
+    z-index: 100;
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+}
 
 .logo {
     display: flex;
@@ -476,7 +513,6 @@ tr:hover {
     position: relative;
     left: 85px;
 }
-
 
 .uc-logo {
     height: 45px; /* Set a different height */
@@ -514,22 +550,46 @@ tr:hover {
 
 /* Dashboard Container */
 .dashboard-container {
-    margin: 20px;
+    width: 30%;
+    text-align: center;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
 .student-info {
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    margin-top: 20px;
-    flex: 1;
-    position: relative; /* Allows absolute positioning for the logo */
+    text-align: left;
+    margin-bottom: 20px;
+    padding-right: 140px; /* Create space for the profile picture */
 }
 
 .student-info p {
-    font-size: 16px;
+    font-size: 18px;
     margin: 10px 0;
+}
+
+.profile-pic {
+    width: 120px;
+    height: 120px;
+    overflow: hidden;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+}
+
+.profile-pic img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .logo {
@@ -570,23 +630,306 @@ tr:hover {
 }
 
 @media (max-width: 768px) {
+    /* Fix header and body */
+    body {
+        height: auto;
+        min-height: 100vh;
+        display: block;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        background-attachment: fixed;
+    }
+    
     .header-container {
-        flex-direction: column; /* Stack items vertically */
+        flex-direction: row;
+        justify-content: space-between;
         text-align: center;
+        padding: 8px 5px;
+        position: fixed;
+        height: 40px; /* Set fixed height */
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 100;
+        box-sizing: border-box;
     }
-
+    
+    .header-left {
+        display: flex;
+        align-items: center;
+        margin-left: 2px;
+    }
+    
+    .header-title h1 {
+        font-size: 16px;
+        margin: 0;
+        white-space: nowrap;
+        padding-left: 5px;
+    }
+    
+    /* Fix header logo positioning */
+    .header-container .logo {
+        position: absolute !important;
+        top: 50% !important;
+        right: 10px !important;
+        left: auto !important;
+        transform: translateY(-50%) !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+        margin: 0 !important;
+        gap: 3px !important;
+        z-index: 999 !important;
+    }
+    
+    .main-logo, .uc-logo, .psits-logo {
+        height: 22px;
+        width: auto;
+        position: static;
+        left: auto;
+        margin: 0;
+    }
+    
+    /* Mobile menu toggle */
+    .mobile-menu-toggle {
+        display: block !important;
+        position: relative;
+        font-size: 18px;
+        background: none;
+        border: none;
+        color: white;
+        padding: 0;
+        margin: 0 3px 0 0;
+    }
+    
+    /* Mobile menu styles */
     .nav-links {
-        flex-direction: column; /* Stack buttons */
-        gap: 10px;
-        margin-top: 10px;
+        position: fixed; /* Change to fixed to cover full height */
+        top: 40px; /* Match the header height */
+        left: 0;
+        width: 25%; /* 1/4 width as requested */
+        background-color: blue;
+        z-index: 100;
+        padding: 0;
+        margin: 0;
+        box-shadow: 4px 0 6px rgba(0,0,0,0.1);
+        transform: translateX(-100%); /* Start off-screen */
+        transition: transform 0.3s ease-in-out, opacity 0.3s ease; /* Animation for sliding in */
+        visibility: hidden; /* Hide the menu instead of display:none */
+        overflow-y: auto; /* Allow scrolling if menu is taller than screen */
+        height: calc(100vh - 40px); /* Full height minus header */
+        opacity: 0;
+        display: flex; /* Enable flex layout */
+        flex-direction: column; /* Stack menu items vertically */
     }
-
+    
+    .nav-links.active {
+        transform: translateX(0); /* Slide in from left */
+        visibility: visible; /* Show the menu */
+        opacity: 1;
+    }
+    
+    .nav-links a {
+        width: 100%;
+        padding: 15px 0;
+        margin: 0;
+        text-align: center;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        font-size: 16px;
+        display: block;
+        transition: background-color 0.2s ease; /* Animation for hover effect */
+    }
+    
+    .nav-links a:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+    
+    .nav-links a:last-child {
+        border-bottom: none;
+    }
+    
+    /* Mobile dashboard layout */
+    .dashboard-wrapper {
+        flex-direction: column;
+        justify-content: center;
+        padding: 10px;
+        margin-top: 45px; /* Adjusted for new header height */
+        width: 95%;
+        max-width: 100%;
+    }
+    
+    .dashboard-container,
+    .lab-rules,
+    .announcements {
+        width: 100%;
+        position: static;
+        right: 0;
+        margin: 0 auto 20px auto;
+        max-height: none;
+        box-sizing: border-box;
+    }
+    
     .dashboard-container {
+        order: 1;
         padding: 15px;
     }
-
+    
+    .lab-rules {
+        order: 2;
+    }
+    
+    .announcements {
+        order: 3;
+    }
+    
+    /* Mobile student info section - maintaining right-side profile */
+    .student-info {
+        position: relative;
+        padding: 15px;
+        padding-right: 120px; /* Space for profile on right */
+        margin-bottom: 0;
+    }
+    
     .student-info p {
         font-size: 14px;
+        margin: 8px 0;
+        text-align: left;
+    }
+    
+    /* Fix profile picture positioning to ensure it stays on the right */
+    .dashboard-container .profile-pic {
+        position: absolute !important;
+        top: 20% !important;
+        right: 15px !important;
+        left: auto !important;
+        width: 80px !important;
+        height: 80px !important;
+        border: 2px solid #fff !important;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2) !important;
+        z-index: 999 !important;
+        transform: none !important;
+    }
+    
+    .profile-pic img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+    
+    .lab-rules-content, .announcements-content {
+        max-height: 200px;
+    }
+    
+    .button {
+        width: 100%;
+        margin-top: 5px;
+    }
+}
+
+/* For even smaller screens */
+@media (max-width: 480px) {    
+    /* Menu modifications for very small screens */
+    .nav-links {
+        width: 35%; /* Slightly wider on very small screens, but still narrower than before */
+        top: 35px; /* Match the header height for small screens */
+        height: calc(100vh - 35px); /* Full height minus header */
+    }
+    
+    body {
+        padding: 0;
+        margin: 0;
+        background-position: center bottom;
+    }
+    
+    .header-container {
+        padding: 5px 3px;
+        height: 35px;
+    }
+    
+    .header-left {
+        margin-left: 0;
+    }
+    
+    .header-title h1 {
+        font-size: 14px;
+        padding-left: 2px;
+    }
+    
+    .mobile-menu-toggle {
+        font-size: 16px;
+        margin-right: 2px;
+    }
+    
+    .logo {
+        right: 5px;
+    }
+    
+    .main-logo, .uc-logo, .psits-logo {
+        height: 18px;
+        width: auto;
+        margin: 0;
+    }
+    
+    .nav-links a {
+        padding: 12px 0;
+        font-size: 15px;
+    }
+    
+    .dashboard-wrapper {
+        margin-top: 40px;
+        padding: 5px;
+        width: 98%;
+    }
+    
+    .dashboard-container, .lab-rules, .announcements {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+    }
+    
+    /* Fix profile picture positioning on smaller screens */
+    .dashboard-container .profile-pic {
+        width: 70px !important;
+        height: 70px !important;
+        right: 10px !important;
+        top: 20% !important;
+    }
+    
+    .student-info {
+        padding: 10px;
+        padding-right: 90px; /* Reduced padding for smaller screens */
+    }
+    
+    .student-info p {
+        font-size: 12px;
+        margin: 5px 0;
+    }
+    
+    /* Improve readability of lab rules */
+    .lab-rules h3, .announcements h3 {
+        font-size: 16px;
+    }
+    
+    .lab-rules-content, .announcements-content {
+        max-height: 150px;
+        font-size: 12px;
+    }
+    
+    /* Fix header logo positioning for smaller screens */
+    .header-container .logo {
+        right: 5px !important;
+    }
+}
+
+/* Fix for orientation change */
+@media (orientation: landscape) and (max-width: 768px) {
+    .dashboard-wrapper {
+        margin-top: 80px;
+    }
+    
+    .lab-rules-content, .announcements-content {
+        max-height: 120px;
     }
 }
 
@@ -774,19 +1117,16 @@ th {
 
 .dashboard-wrapper {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: flex-start;
     max-width: 1200px;
-    margin: auto;
+    margin: 80px auto 20px;
     padding: 20px;
 }
 
 .lab-rules {
-    width: 50%;
+    width: 30%;
     background: #f8f9fa;
-    position: relative;
-    right: 50px;
-    bottom: 23px;
     padding: 15px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -797,25 +1137,11 @@ th {
 .announcements{
     width: 30%;
     background: #f8f9fa;
-    position: relative;
-    right: 150px;
     padding: 15px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     max-height: 350px; /* Adjust height to fit layout */
     overflow: hidden; /* Prevents expanding beyond max height */
-
-}
-
-.dashboard-container {
-    width: 60%;
-    position: relative;
-    right: 179px;
-    text-align: center;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .lab-rules h3, .announcements h3 {
@@ -856,31 +1182,6 @@ th {
 
 .announcements-content::-webkit-scrollbar-thumb:hover {
     background-color: #555;
-}
-
-.profile-pic {
-    width: 150px;  /* Adjust width */
-    height: 150px; /* Adjust height */
-    overflow: hidden; /* Prevent overflow */
-    border-radius: 50%; /* Make it circular */
-    border: 3px solid #fff; /* Add a white border */
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2); /* Add a slight shadow */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    right: 0%;
-    left: 57%;
-    top: 15%;
-
-    
-}
-
-.profile-pic img {
-    width: 100%;  /* Make sure the image fits */
-    height: 100%;
-    object-fit: cover; /* Crop and center the image */
-    
 }
 
 .announcements-container {
@@ -1134,5 +1435,586 @@ th {
 }
 
 #feedbackFormContent button:hover {
+    background-color: #0056b3;
+}
+
+/* Mobile Navigation Hamburger Menu */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+}
+
+@media (max-width: 768px) {
+    /* Mobile menu styles */
+    .nav-links {
+        position: fixed; /* Change to fixed to cover full height */
+        top: 40px; /* Match the header height */
+        left: 0;
+        width: 25%; /* 1/4 width as requested */
+        background-color: blue;
+        z-index: 100;
+        padding: 0;
+        margin: 0;
+        box-shadow: 4px 0 6px rgba(0,0,0,0.1);
+        transform: translateX(-100%); /* Start off-screen */
+        transition: transform 0.3s ease-in-out, opacity 0.3s ease; /* Animation for sliding in */
+        visibility: hidden; /* Hide the menu instead of display:none */
+        overflow-y: auto; /* Allow scrolling if menu is taller than screen */
+        height: calc(100vh - 40px); /* Full height minus header */
+        opacity: 0;
+        display: flex; /* Enable flex layout */
+        flex-direction: column; /* Stack menu items vertically */
+    }
+    
+    .nav-links.active {
+        transform: translateX(0); /* Slide in from left */
+        visibility: visible; /* Show the menu */
+        opacity: 1;
+    }
+    
+    .nav-links a {
+        width: 100%;
+        padding: 15px 0;
+        margin: 0;
+        text-align: center;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        font-size: 16px;
+        display: block;
+        transition: background-color 0.2s ease; /* Animation for hover effect */
+    }
+    
+    .nav-links a:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+    
+    .nav-links a:last-child {
+        border-bottom: none;
+    }
+}
+
+/* For even smaller screens */
+@media (max-width: 480px) {    
+    /* Menu modifications for very small screens */
+    .nav-links {
+        width: 35%; /* Slightly wider on very small screens, but still narrower than before */
+        top: 35px; /* Match the header height for small screens */
+        height: calc(100vh - 35px); /* Full height minus header */
+    }
+    
+    body {
+        padding: 0;
+        margin: 0;
+        background-position: center bottom;
+    }
+    
+    .header-container {
+        padding: 5px 3px;
+        height: 35px;
+    }
+    
+    .header-left {
+        margin-left: 0;
+    }
+    
+    .header-title h1 {
+        font-size: 14px;
+        padding-left: 2px;
+    }
+    
+    .mobile-menu-toggle {
+        font-size: 16px;
+        margin-right: 2px;
+    }
+    
+    .logo {
+        right: 5px;
+    }
+    
+    .main-logo, .uc-logo, .psits-logo {
+        height: 18px;
+        width: auto;
+        margin: 0;
+    }
+    
+    .nav-links a {
+        padding: 12px 0;
+        font-size: 15px;
+    }
+    
+    .dashboard-wrapper {
+        margin-top: 40px;
+        padding: 5px;
+        width: 98%;
+    }
+    
+    .dashboard-container, .lab-rules, .announcements {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+    }
+    
+    /* Adjust profile for very small screens */
+    .profile-pic {
+        width: 70px;
+        height: 70px;
+        right: 20px;
+        top: 30%;
+    }
+    
+    .student-info {
+        padding: 10px;
+        padding-right: 90px; /* Reduced padding for smaller screens */
+    }
+    
+    .student-info p {
+        font-size: 12px;
+        margin: 5px 0;
+    }
+    
+    /* Improve readability of lab rules */
+    .lab-rules h3, .announcements h3 {
+        font-size: 16px;
+    }
+    
+    .lab-rules-content, .announcements-content {
+        max-height: 150px;
+        font-size: 12px;
+    }
+}
+
+/* Fix for orientation change */
+@media (orientation: landscape) and (max-width: 768px) {
+    .dashboard-wrapper {
+        margin-top: 80px;
+    }
+    
+    .lab-rules-content, .announcements-content {
+        max-height: 120px;
+    }
+}
+
+/* Edit Record Mobile Styles - Updated with correct class names */
+@media (max-width: 768px) {
+    body {
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    .container {
+        width: 90%;
+        margin: 60px auto 20px;
+        padding: 15px;
+        box-sizing: border-box;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .container form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .container .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
+    .container .form-group label {
+        width: 100%;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+
+    .container .form-group input,
+    .container .form-group select,
+    .container .dropdown {
+        width: 100%;
+        padding: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .container button {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        width: 95%;
+        margin: 50px auto 15px;
+        padding: 10px;
+    }
+
+    .container .form-group label {
+        font-size: 13px;
+    }
+
+    .container .form-group input,
+    .container .form-group select,
+    .container .dropdown {
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .container button {
+        padding: 10px;
+        font-size: 14px;
+        margin-top: 15px;
+    }
+}
+
+/* Reservation Mobile Styles */
+@media (max-width: 768px) {
+    .reservation-container {
+        width: 90%;
+        max-width: none;
+        margin: 60px auto 20px;
+        padding: 15px;
+        box-sizing: border-box;
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
+    }
+    
+    .reservation-container h2 {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .reservation-container .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+    
+    .reservation-container .form-group label {
+        width: 100%;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+    
+    .reservation-container .form-group input,
+    .reservation-container .form-group select {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .reservation-container button {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        margin-top: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .reservation-container {
+        width: 95%;
+        margin: 50px auto 15px;
+        padding: 10px;
+        border-width: 1px;
+    }
+    
+    .reservation-container h2 {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+    
+    .reservation-container .form-group {
+        margin-bottom: 10px;
+    }
+    
+    .reservation-container .form-group label {
+        font-size: 13px;
+        margin-bottom: 3px;
+    }
+    
+    .reservation-container .form-group input,
+    .reservation-container .form-group select {
+        padding: 8px;
+        font-size: 13px;
+    }
+    
+    .reservation-container button {
+        padding: 10px;
+        font-size: 14px;
+    }
+}
+
+/* History Mobile Styles */
+@media (max-width: 768px) {
+    .history_dashboard-container {
+        width: 90%;
+        margin: 60px auto 20px;
+        padding: 15px;
+        box-sizing: border-box;
+        overflow-x: auto;
+    }
+    
+    .history_dashboard-container h2 {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .history_dashboard-container table {
+        width: 100%;
+        font-size: 14px;
+    }
+    
+    .history_dashboard-container th,
+    .history_dashboard-container td {
+        padding: 8px 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .history_dashboard-container {
+        width: 95%;
+        margin: 50px auto 15px;
+        padding: 10px;
+    }
+    
+    .history_dashboard-container h2 {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+    
+    .history_dashboard-container table {
+        font-size: 12px;
+    }
+    
+    .history_dashboard-container th,
+    .history_dashboard-container td {
+        padding: 6px 4px;
+        white-space: nowrap;
+    }
+    
+    /* Add horizontal scrolling for tables on very small screens */
+    .history_dashboard-container .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Feedback Form Mobile Styles */
+@media (max-width: 768px) {
+    .feedback-form-container {
+        width: 90%;
+        max-width: none;
+        padding: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 50%;
+        margin: 0;
+        z-index: 1000;
+        position: fixed;
+    }
+    
+    .feedback-form-container #feedbackText {
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+    
+    .feedback-form-container button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        font-size: 16px;
+    }
+    
+    .feedback-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .feedback-form-container {
+        width: 95%;
+        padding: 15px;
+    }
+    
+    .feedback-form-container #feedbackText {
+        font-size: 13px;
+        padding: 8px;
+    }
+    
+    .feedback-form-container button {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .feedback-btn {
+        padding: 5px 8px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+}
+
+/* Login Mobile Styles */
+@media (max-width: 768px) {
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-size: cover;
+        background-position: center;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .login-container {
+        width: 85%;
+        max-width: 350px;
+        margin: 0 auto;
+        padding: 25px 20px;
+        box-sizing: border-box;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        border: 1px solid #ddd;
+        position: relative; /* Added to properly position the logo */
+    }
+    
+    .login-container h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #000;
+    }
+    
+    .login-container input[type="text"],
+    .login-container input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        margin: 8px 0;
+    }
+    
+    .login-container button {
+        width: 90%;
+        padding: 12px;
+        font-size: 16px;
+        margin-top: 15px;
+        background-color: blue;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .password-container {
+        width: 100%;
+        position: relative;
+        margin: 8px 0;
+    }
+    
+    .password-container input {
+        width: 100%;
+        padding-right: 40px;
+    }
+    
+    .toggle-password {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    
+    .remember-forgot {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        margin: 15px 0;
+        font-size: 14px;
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+    }
+    
+    .remember-forgot a {
+        color: blue;
+        text-decoration: none;
+    }
+    
+    .logo {
+        width: 55px;
+        height: auto;
+        position: absolute;
+        top: -17px; /* Changed from 5px to -25px to position at the top */
+        left: 0;
+        right: 0;
+        margin: 0 auto; /* Center horizontally */
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        width: 90%;
+        padding: 20px 15px;
+    }
+    
+    .login-container h2 {
+        font-size: 22px;
+    }
+    
+    .login-container input[type="text"],
+    .login-container input[type="password"] {
+        padding: 10px;
+        font-size: 13px;
+    }
+    
+    .login-container button {
+        padding: 10px;
+        font-size: 15px;
+    }
+    
+    .remember-forgot {
+        font-size: 13px;
+    }
+    
+    .logo {
+        width: 50px;
+        top: -17px; /* Changed from 5px to -25px to position at the top */
+        left: 0;
+        right: 0;
+        margin: 0 auto; /* Center horizontally */
+    }
+}
+
+/* Feedback button styling */
+.feedback-btn {
+    padding: 8px 12px;
+    background-color: blue;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    width: auto;
+    margin: 0 auto;
+    display: block;
+    white-space: nowrap;
+}
+
+.feedback-btn:hover {
     background-color: #0056b3;
 }

@@ -233,8 +233,8 @@ def admin_dashboard():
     # Get number of current sit-ins
     current_sit_in_count = Reservation.query.filter_by(status="Sit-in").count()
 
-    # Get total number of completed sit-ins
-    total_sit_ins = Reservation.query.filter_by(status="Ended").count()
+    # Get total number of completed sit-ins (include both Ended and Archived for cumulative stats)
+    total_sit_ins = Reservation.query.filter(Reservation.status.in_(["Ended", "Archived"])).count()
 
     # Fetch active sessions with Purpose, Lab, and Status
     active_sessions = (
@@ -325,13 +325,13 @@ def admin_dashboard():
         .all()
     )
 
-    # Calculate Purpose statistics for chart
+    # Calculate Purpose statistics for chart - include both Ended and Archived for cumulative stats
     purpose_stats = (
         db.session.query(
             Reservation.purpose,
             func.count(Reservation.id).label("count")
         )
-        .filter(Reservation.status.in_(["Ended", "Sit-in"]))  # Only show non-archived completed sessions
+        .filter(Reservation.status.in_(["Ended", "Archived", "Sit-in"]))  # Include archived records for cumulative stats
         .group_by(Reservation.purpose)
         .all()
     )
@@ -339,13 +339,13 @@ def admin_dashboard():
     # Format purpose stats for JSON
     purpose_stats_list = [{"purpose": p.purpose, "count": p.count} for p in purpose_stats]
     
-    # Calculate Lab statistics for chart
+    # Calculate Lab statistics for chart - include both Ended and Archived for cumulative stats
     lab_stats = (
         db.session.query(
             Reservation.lab,
             func.count(Reservation.id).label("count")
         )
-        .filter(Reservation.status.in_(["Ended", "Sit-in"]))  # Only show non-archived completed sessions
+        .filter(Reservation.status.in_(["Ended", "Archived", "Sit-in"]))  # Include archived records for cumulative stats
         .group_by(Reservation.lab)
         .all()
     )
@@ -1134,7 +1134,7 @@ def archive_sit_in_records():
             
             # Check if it's 9:30 PM
             if now.hour == 21 and now.minute == 30:
-                print("Running scheduled task: Archiving sit-in records and resetting statistics...")
+                print("Running scheduled task: Archiving today's sit-in records...")
                 
                 # Get all active sit-in sessions
                 active_sit_ins = Reservation.query.filter_by(status="Sit-in").all()
@@ -1145,13 +1145,19 @@ def archive_sit_in_records():
                         sit_in.status = "Ended"
                         sit_in.time_out = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 
-                # Reset Usage Statistics by updating all reservations to "Archived" status
-                all_ended_reservations = Reservation.query.filter_by(status="Ended").all()
-                for reservation in all_ended_reservations:
+                # Only archive today's Ended records, not all of them
+                # This preserves the historical statistics for Student Statistics and Purpose counts
+                current_date = datetime.now().strftime("%Y-%m-%d")
+                todays_ended_reservations = Reservation.query.filter_by(
+                    status="Ended", 
+                    date=current_date
+                ).all()
+                
+                for reservation in todays_ended_reservations:
                     reservation.status = "Archived"
                 
                 db.session.commit()
-                print(f"Archived {len(active_sit_ins)} sit-in records and reset all statistics")
+                print(f"Archived {len(active_sit_ins)} active sit-ins and {len(todays_ended_reservations)} today's records")
                 
                 # Wait until the next minute to avoid running the task multiple times
                 time.sleep(60)
@@ -1165,7 +1171,7 @@ if __name__ == "__main__":
     scheduler_thread = threading.Thread(target=archive_sit_in_records, daemon=True)
     scheduler_thread.start()
     
-    app.run(debug=True)
+    app.run(debug=True, host="192.168.1.14",  port="5000")
 
 @app.route("/update_feedback_labs", methods=["GET"])
 def update_feedback_labs():
