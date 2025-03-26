@@ -35,7 +35,7 @@ app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
 app.config['MAIL_PASSWORD'] = 'your-email-password'
 mail = Mail(app)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://localhost\\SQLEXPRESS01/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://localhost\\SQLEXPRESS/SitInMonitoring?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize the database with the app
@@ -1171,7 +1171,7 @@ if __name__ == "__main__":
     scheduler_thread = threading.Thread(target=archive_sit_in_records, daemon=True)
     scheduler_thread.start()
     
-    app.run(debug=True, host="192.168.1.14",  port="5000")
+    app.run(debug=True, host="172.19.131.159",  port="5000")
 
 @app.route("/update_feedback_labs", methods=["GET"])
 def update_feedback_labs():
